@@ -273,7 +273,7 @@ Responsibilities:
 
 Skills are the workflow and policy plane. They should call MCP tools by intent, not reimplement SSH/PBS behavior.
 
-The canonical skill roster (14 skills) lives in [`skills/README.md`](../skills/README.md): seven single-step building blocks (below), six end-to-end orchestrators that compose them (`run-experiment`, `run-sweep`, `triage-and-retry`, `review-approvals`, `reproduce-run`, `fleet-status`), and the standalone `confirm-usage` iHPC-monitoring email responder. The table below details the single-step building blocks.
+The canonical skill roster (15 skills) lives in [`skills/README.md`](../skills/README.md): seven single-step building blocks (below), six end-to-end orchestrators that compose them (`run-experiment`, `run-sweep`, `triage-and-retry`, `review-approvals`, `reproduce-run`, `fleet-status`), the standalone `confirm-usage` iHPC-monitoring email responder, and the cross-cutting `consult-platform-docs` (consult the official UTS docs when uncertain or when a needed capability is missing). The table below details the single-step building blocks.
 
 Single-step building-block Skills:
 
