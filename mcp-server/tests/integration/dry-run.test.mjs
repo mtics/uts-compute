@@ -99,7 +99,14 @@ test("jobs.plan defaults a queue-less GPU job to a real GPU queue (small_gpuq), 
   assert.equal(plan.template, "pbs-gpu");
   assert.equal(plan.normalized_job_spec.resources.queue, "small_gpuq");
   assert.match(plan.script, /#PBS -q small_gpuq/);
-  assert.match(plan.script, /#PBS -l ngpus=1/);
+  // CETUS GPU jobs require the PBS chunk/select syntax (-l select=N:ncpus=:ngpus=:mem=). The old
+  // separate -l ncpus= / -l mem= / -l ngpus= form never binds the GPU request to a vnode → stuck in
+  // queue forever (hpc-gpu.json: ncpus 8, ngpus 1, mem 32).
+  assert.match(plan.script, /#PBS -l select=1:ncpus=8:ngpus=1:mem=32gb/);
+  assert.doesNotMatch(plan.script, /#PBS -l ncpus=/);
+  assert.doesNotMatch(plan.script, /#PBS -l ngpus=/);
+  assert.doesNotMatch(plan.script, /#PBS -l mem=/);
+  assert.match(plan.script, /#PBS -l walltime=/);
   assert.equal(plan.approval.required, true);
   assert.ok(plan.approval.reasons.some((reason) => reason.includes("GPU")));
 });

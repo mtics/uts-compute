@@ -1,10 +1,8 @@
 #!/bin/bash
 #PBS -N {{run_id}}
 #PBS -q {{queue}}
-#PBS -l ncpus={{ncpus}}
-#PBS -l mem={{memory_gb}}gb
+#PBS -l select=1:ncpus={{ncpus}}:ngpus={{ngpus}}:mem={{memory_gb}}gb
 #PBS -l walltime={{walltime}}
-#PBS -l ngpus={{ngpus}}
 #PBS -o {{log_dir}}/{{run_id}}.out
 #PBS -e {{log_dir}}/{{run_id}}.err
 
