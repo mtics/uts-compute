@@ -90,14 +90,31 @@ test("jobs.plan accepts a real campaign run_id with mixed case, underscores, and
   assert.equal(plan.normalized_job_spec.run_id, "MMPFedRec_Cards_lr0.001_mainhpo");
 });
 
-test("jobs.plan normalizes GPU jobs to gpuq and marks approval required", () => {
+test("jobs.plan defaults a queue-less GPU job to a real GPU queue (small_gpuq), not the stale routing gpuq", () => {
+  // The live cluster exposes small_gpuq/med_gpuq/large_gpuq (qstat), not a bare routing gpuq; a
+  // queue-less GPU job must default to a REAL queue so plan and submit-time conformance (which checks
+  // the rendered queue against the live snapshot) agree.
   const plan = planJob(readExample("hpc-gpu.json"), { auditDir: tempAuditDir(), writeAudit: false });
 
   assert.equal(plan.template, "pbs-gpu");
-  assert.match(plan.script, /#PBS -q gpuq/);
+  assert.equal(plan.normalized_job_spec.resources.queue, "small_gpuq");
+  assert.match(plan.script, /#PBS -q small_gpuq/);
   assert.match(plan.script, /#PBS -l ngpus=1/);
   assert.equal(plan.approval.required, true);
   assert.ok(plan.approval.reasons.some((reason) => reason.includes("GPU")));
+});
+
+test("jobs.plan respects an explicit GPU queue and renders it (does not clobber to gpuq)", () => {
+  // Regression: the planner must NOT override an explicitly-requested GPU queue, and the GPU template
+  // must render the ACTUAL queue — otherwise plan (gpuq) and submit-time conformance (live *_gpuq) disagree.
+  const job = readExample("hpc-gpu.json");
+  job.run_id = "dry-run-hpc-gpu-explicit";
+  job.resources.queue = "med_gpuq";
+  const plan = planJob(job, { auditDir: tempAuditDir(), writeAudit: false });
+
+  assert.equal(plan.normalized_job_spec.resources.queue, "med_gpuq");
+  assert.match(plan.script, /#PBS -q med_gpuq/);
+  assert.doesNotMatch(plan.script, /#PBS -q gpuq\s/);
 });
 
 test("jobs.plan renders PBS array metadata deterministically", () => {

@@ -192,7 +192,11 @@ function normalizeJobSpec(jobSpec: JobSpec, profile: ComputeProfile, remoteUser:
   const ngpus = resources.ngpus ?? 0;
 
   if (jobSpec.platform === PLATFORM.HPC) {
-    resources.queue = ngpus > 0 ? "gpuq" : resources.queue ?? defaults.queue;
+    // Respect an explicitly-requested queue. The live cluster exposes small_gpuq/med_gpuq/large_gpuq
+    // (qstat) — there is no bare routing `gpuq` in live snapshots, so clobbering an explicit GPU queue
+    // made jobs.plan disagree with submit-time conformance ("Queue gpuq is not present..."). Only a
+    // queue-less GPU job is defaulted, to a REAL GPU queue (small_gpuq); CPU jobs use the profile default.
+    resources.queue = resources.queue ?? (ngpus > 0 ? "small_gpuq" : defaults.queue);
     resources.ngpus = ngpus;
   } else {
     resources.node_family = resources.node_family ?? defaults.node_family;

@@ -54,7 +54,7 @@ test("jobs.plan records approval-required reasons deterministically", () => {
   assert.equal(plan.approval.required, true);
   assert.deepEqual([...plan.approval.reasons].sort(), plan.approval.reasons);
   assert.ok(plan.approval.reasons.some((reason) => reason.includes("GPU resource request")));
-  assert.ok(plan.approval.reasons.some((reason) => reason.includes("Restricted or special queue: gpuq")));
+  assert.ok(plan.approval.reasons.some((reason) => reason.includes("Restricted or special queue: small_gpuq")));
 });
 
 test("approval state machine requests status and approves with a trusted token", () => {
@@ -195,7 +195,7 @@ test("approval requests add operation-specific and profile-switch reasons", () =
   assert.ok(requested.reasons.some((reason) => reason.includes("Retry consumes additional compute")));
   assert.ok(requested.reasons.some((reason) => reason.includes("Cross-account profile switch: uts-hpc-account-a -> uts-hpc-account-b")));
   assert.ok(requested.reasons.some((reason) => reason.includes("GPU resource request")));
-  assert.ok(requested.reasons.some((reason) => reason.includes("Restricted or special queue: gpuq")));
+  assert.ok(requested.reasons.some((reason) => reason.includes("Restricted or special queue: small_gpuq")));
   assert.ok(requested.reasons.some((reason) => reason.includes("Retry after environment fix")));
   assert.equal(requested.command_summary, "python train_gpu.py --device cuda --epochs 1");
   assert.equal(requested.resource_summary.ngpus, 1);
