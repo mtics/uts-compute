@@ -2,7 +2,10 @@ import { PLATFORM } from "../../core/types.js";
 import type { JobSpec } from "../../core/types.js";
 import { parseHmsSeconds } from "../../lib/walltime.js";
 
-const RESTRICTED_QUEUES = new Set(["gpuq", "expressq", "riskyq", "testq", "ciq", "priv05_08"]);
+const RESTRICTED_QUEUES = new Set([
+  "gpuq", "small_gpuq", "med_gpuq", "large_gpuq", // GPU queues (live: small/med/large_gpuq; gpuq legacy)
+  "expressq", "riskyq", "testq", "ciq", "priv05_08"
+]);
 const HIGH_CPU_THRESHOLD = 16;
 const HIGH_MEMORY_GB_THRESHOLD = 64;
 const LONG_WALLTIME_HOURS = 24;

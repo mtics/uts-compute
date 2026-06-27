@@ -1181,7 +1181,7 @@ test("MCP stdio server handles approval request status and trusted decision thro
       ).approval;
       assert.equal(requested.state, "required");
       assert.ok(requested.reasons.some((reason) => reason.includes("GPU resource request")));
-      assert.ok(requested.reasons.some((reason) => reason.includes("Restricted or special queue: gpuq")));
+      assert.ok(requested.reasons.some((reason) => reason.includes("Restricted or special queue: small_gpuq")));
       assert.equal(requested.command_summary, planned.normalized_job_spec.command);
       assert.equal(requested.resource_summary.ngpus, 1);
 

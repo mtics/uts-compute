@@ -34,7 +34,7 @@
     "quota_snapshot_id": { "type": "string" },
     "template": {
       "type": "string",
-      "enum": ["pbs-cpu", "pbs-gpu", "pbs-array", "ihpc-background"]
+      "enum": ["pbs-cpu", "pbs-gpu", "pbs-array", "pbs-array-gpu", "ihpc-background"]
     },
     "script": {
       "type": "string",

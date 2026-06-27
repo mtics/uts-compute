@@ -192,7 +192,11 @@ function normalizeJobSpec(jobSpec: JobSpec, profile: ComputeProfile, remoteUser:
   const ngpus = resources.ngpus ?? 0;
 
   if (jobSpec.platform === PLATFORM.HPC) {
-    resources.queue = ngpus > 0 ? "gpuq" : resources.queue ?? defaults.queue;
+    // Respect an explicitly-requested queue. The live cluster exposes small_gpuq/med_gpuq/large_gpuq
+    // (qstat) — there is no bare routing `gpuq` in live snapshots, so clobbering an explicit GPU queue
+    // made jobs.plan disagree with submit-time conformance ("Queue gpuq is not present..."). Only a
+    // queue-less GPU job is defaulted, to a REAL GPU queue (small_gpuq); CPU jobs use the profile default.
+    resources.queue = resources.queue ?? (ngpus > 0 ? "small_gpuq" : defaults.queue);
     resources.ngpus = ngpus;
   } else {
     resources.node_family = resources.node_family ?? defaults.node_family;
@@ -216,10 +220,9 @@ function chooseTemplate(jobSpec: JobSpec): TemplateId {
   }
 
   if (jobSpec.resources.array) {
-    if ((jobSpec.resources.ngpus ?? 0) > 0) {
-      throw new Error("M1 does not support GPU array templates; split GPU and array planning explicitly");
-    }
-    return "pbs-array";
+    // GPU arrays (sweeps) need the select-chunk syntax with ngpus, like single GPU jobs — a dedicated
+    // template since the flat {{var}} renderer can't branch. CPU arrays keep the separate-resource form.
+    return (jobSpec.resources.ngpus ?? 0) > 0 ? "pbs-array-gpu" : "pbs-array";
   }
 
   return (jobSpec.resources.ngpus ?? 0) > 0 ? "pbs-gpu" : "pbs-cpu";
@@ -310,7 +313,7 @@ function templateVariables(jobSpec: JobSpec, templateId: TemplateId): Record<str
     ngpus: resources.ngpus ?? 0
   };
 
-  if (templateId === "pbs-array" && resources.array) {
+  if ((templateId === "pbs-array" || templateId === "pbs-array-gpu") && resources.array) {
     base.array_start = resources.array.start;
     base.array_end = resources.array.end;
     base.array_max_concurrent = resources.array.max_concurrent ?? 1;
