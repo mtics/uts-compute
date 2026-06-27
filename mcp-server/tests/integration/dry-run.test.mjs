@@ -34,7 +34,7 @@ test("profiles can be listed, redacted, and validated", () => {
 
 test("templates catalog includes all M1 dry-run templates", () => {
   const ids = listTemplates().map((template) => template.id).sort();
-  assert.deepEqual(ids, ["ihpc-background", "pbs-array", "pbs-cpu", "pbs-gpu", "transfer-rsync"]);
+  assert.deepEqual(ids, ["ihpc-background", "pbs-array", "pbs-array-gpu", "pbs-cpu", "pbs-gpu", "transfer-rsync"]);
 });
 
 test("jobs.plan renders deterministic UTS HPC CPU PBS script and audit record", () => {
@@ -122,6 +122,24 @@ test("jobs.plan respects an explicit GPU queue and renders it (does not clobber 
   assert.equal(plan.normalized_job_spec.resources.queue, "med_gpuq");
   assert.match(plan.script, /#PBS -q med_gpuq/);
   assert.doesNotMatch(plan.script, /#PBS -q gpuq\s/);
+});
+
+test("jobs.plan routes a GPU array (sweep) to pbs-array-gpu with the select chunk + -J", () => {
+  // GPU sweeps were hard-rejected ("M1 does not support GPU array templates"). They now render a
+  // dedicated array+GPU script carrying BOTH the PBS array (-J) and the select chunk with ngpus
+  // (hpc-array.json: ncpus 1, mem 2, array 0-4%2; + ngpus 1).
+  const job = readExample("hpc-array.json");
+  job.run_id = "dry-run-hpc-array-gpu";
+  job.resources.queue = "small_gpuq";
+  job.resources.ngpus = 1;
+  const plan = planJob(job, { auditDir: tempAuditDir(), writeAudit: false });
+
+  assert.equal(plan.template, "pbs-array-gpu");
+  assert.match(plan.script, /#PBS -q small_gpuq/);
+  assert.match(plan.script, /#PBS -J 0-4%2/);
+  assert.match(plan.script, /#PBS -l select=1:ncpus=1:ngpus=1:mem=2gb/);
+  assert.doesNotMatch(plan.script, /#PBS -l ngpus=/);
+  assert.doesNotMatch(plan.script, /#PBS -l mem=/);
 });
 
 test("jobs.plan renders PBS array metadata deterministically", () => {

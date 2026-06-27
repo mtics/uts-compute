@@ -220,10 +220,9 @@ function chooseTemplate(jobSpec: JobSpec): TemplateId {
   }
 
   if (jobSpec.resources.array) {
-    if ((jobSpec.resources.ngpus ?? 0) > 0) {
-      throw new Error("M1 does not support GPU array templates; split GPU and array planning explicitly");
-    }
-    return "pbs-array";
+    // GPU arrays (sweeps) need the select-chunk syntax with ngpus, like single GPU jobs — a dedicated
+    // template since the flat {{var}} renderer can't branch. CPU arrays keep the separate-resource form.
+    return (jobSpec.resources.ngpus ?? 0) > 0 ? "pbs-array-gpu" : "pbs-array";
   }
 
   return (jobSpec.resources.ngpus ?? 0) > 0 ? "pbs-gpu" : "pbs-cpu";
@@ -314,7 +313,7 @@ function templateVariables(jobSpec: JobSpec, templateId: TemplateId): Record<str
     ngpus: resources.ngpus ?? 0
   };
 
-  if (templateId === "pbs-array" && resources.array) {
+  if ((templateId === "pbs-array" || templateId === "pbs-array-gpu") && resources.array) {
     base.array_start = resources.array.start;
     base.array_end = resources.array.end;
     base.array_max_concurrent = resources.array.max_concurrent ?? 1;

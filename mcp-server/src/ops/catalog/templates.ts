@@ -21,6 +21,12 @@ export const TEMPLATE_CATALOG = [
     description: "UTS HPC PBS array dry-run script"
   },
   {
+    id: "pbs-array-gpu",
+    platform: "uts-hpc",
+    path: "templates/pbs/array-gpu.pbs.hbs",
+    description: "UTS HPC PBS GPU array dry-run script (select chunk with ngpus)"
+  },
+  {
     id: "ihpc-background",
     platform: "uts-ihpc",
     path: "templates/ihpc/background-run.sh.hbs",
