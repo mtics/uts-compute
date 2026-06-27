@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>uts-compute · experiment tracking</title>
+    <link rel="icon" href="data:," />
+    <!-- Apply the saved theme before paint to avoid a flash of the wrong color scheme. -->
+    <script>document.documentElement.setAttribute("data-bs-theme", localStorage.getItem("uts-theme") || "light");</script>
+    <!-- Tabler (MIT) + ApexCharts + List.js, all via CDN — zero build step. -->
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.5.0/tabler-icons.min.css" rel="stylesheet" />
+    <link href="/app.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/list.js@2.3.1/dist/list.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/js/tabler.min.js" defer></script>
+    <script src="/app.js" type="module" defer></script>
+  </head>
+  <body>
+    <div class="page">
+      <header class="navbar navbar-expand-md app-topbar d-print-none">
+        <div class="container-xl">
+          <a class="navbar-brand app-brand" href="/runs">
+            <span><span class="text-blue">uts</span>-compute</span>
+            <span class="badge bg-blue-lt">experiments</span>
+          </a>
+          <button class="navbar-toggler collapsed" type="button" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+          <span class="app-mobile-safety-baseline" aria-label="Dashboard safety baseline summary">
+            <span class="app-safety-chip app-safety-static app-mobile-safety-summary" title="Local dashboard with gated actions">
+              <i class="ti ti-home-shield"></i><span aria-label="local gate">local</span>
+            </span>
+          </span>
+          <div class="collapse navbar-collapse" id="nav">
+            <ul class="navbar-nav app-topnav" id="nav-links">
+              <li class="nav-item"><a class="nav-link" href="/runs" data-nav-link="runs"><span class="nav-link-icon"><i class="ti ti-list-details"></i></span><span class="nav-link-title">Runs</span><span class="app-nav-insight" data-nav-insight="runs" hidden></span></a></li>
+              <li class="nav-item"><a class="nav-link" href="/explore" data-nav-link="explore"><span class="nav-link-icon"><i class="ti ti-chart-dots"></i></span><span class="nav-link-title">Explore</span><span class="app-nav-insight" data-nav-insight="explore" hidden></span></a></li>
+              <li class="nav-item"><a class="nav-link" href="/capacity" data-nav-link="capacity"><span class="nav-link-icon"><i class="ti ti-stack-2"></i></span><span class="nav-link-title">Capacity</span><span class="app-nav-insight" data-nav-insight="capacity" hidden></span></a></li>
+              <li class="nav-item"><a class="nav-link" href="/projects" data-nav-link="projects"><span class="nav-link-icon"><i class="ti ti-folders"></i></span><span class="nav-link-title">Projects</span><span class="app-nav-insight" data-nav-insight="projects" hidden></span></a></li>
+            </ul>
+            <div class="app-safety-context ms-md-auto" aria-label="Local safety context">
+              <span class="app-safety-baseline" aria-label="Dashboard safety baseline">
+                <span class="app-safety-chip app-safety-static" title="Served from 127.0.0.1 only">
+                  <i class="ti ti-home-shield"></i><span>local</span>
+                </span>
+                <span class="app-safety-chip app-safety-static" title="Reads already-redacted local state by default">
+                  <i class="ti ti-eye-check"></i><span>read-mostly</span>
+                </span>
+                <span class="app-safety-chip app-safety-static" title="Submit, clone, cancel, and approval decisions stay behind MCP gates; server conformance passes against a fresh quota snapshot">
+                  <i class="ti ti-lock-check"></i><span>MCP-gated</span>
+                </span>
+              </span>
+              <span class="app-safety-scope" id="app-safety-scope" aria-label="Current data scope" hidden></span>
+            </div>
+            <div class="navbar-nav flex-row app-top-actions">
+              <button class="btn btn-icon btn-ghost-secondary" id="theme-toggle" title="Toggle light / dark theme" aria-label="Toggle theme">
+                <i class="ti ti-moon" id="theme-icon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="page-wrapper">
+        <div class="page-body">
+          <div class="container-xl" id="view">
+            <div class="text-secondary p-4">Loading…</div>
+          </div>
+        </div>
+        <footer class="footer footer-transparent app-footer">
+          <div class="container-xl text-secondary small">
+            <span class="app-footer-summary">Read-only local dashboard over <code>.uts-computing/</code></span>
+            <span class="app-footer-safety">redacted data, localhost only</span>
+            <span class="app-footer-meta">
+              <a class="app-footer-link" href="https://github.com/mtics/uts-compute" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-github" aria-hidden="true"></i>uts-compute</a>
+              <a class="app-footer-link" href="https://github.com/mtics" target="_blank" rel="noopener noreferrer">Built by Zhiwei Li</a>
+            </span>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <div id="toasts" class="position-fixed bottom-0 end-0 p-3" style="z-index:1100"></div>
+    <div id="status-region" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>

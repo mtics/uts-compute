@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -N {{run_id}}
+#PBS -q {{queue}}
+#PBS -l ncpus={{ncpus}}
+#PBS -l mem={{memory_gb}}gb
+#PBS -l walltime={{walltime}}
+#PBS -o {{log_dir}}/{{run_id}}.out
+#PBS -e {{log_dir}}/{{run_id}}.err
+
+set -euo pipefail
+
+mkdir -p "{{workdir}}"
+cd "{{workdir}}"
+{{command}}

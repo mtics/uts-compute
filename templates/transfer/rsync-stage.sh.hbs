@@ -1,0 +1,4 @@
+#!/bin/bash
+set -euo pipefail
+
+rsync -avh --progress --checksum {{source_single_quoted}} {{destination_single_quoted}}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS Profile Select"
+  short_description: "Select and validate explicit UTS compute account profiles"
+  default_prompt: "Choose one explicit UTS compute profile for this run, validate it, and refresh live limits through quota MCP tools when live limits matter."

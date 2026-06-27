@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/onboarding-record.schema.json",
+  "title": "UTS Computing Onboarding Record",
+  "type": "object",
+  "required": ["profile_id", "platform", "onboarded_at", "snapshot_id", "cluster"],
+  "properties": {
+    "profile_id": { "type": "string" },
+    "platform": { "type": "string", "enum": ["uts-hpc", "uts-ihpc"] },
+    "onboarded_at": { "type": "string", "format": "date-time" },
+    "snapshot_id": { "type": "string" },
+    "cluster": { "type": "string" }
+  },
+  "additionalProperties": false
+}

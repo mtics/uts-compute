@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/artifact-manifest.schema.json",
+  "title": "UTS Computing Artifact Manifest",
+  "type": "object",
+  "required": ["run_id", "profile_id", "platform", "created_at", "artifacts", "truncated"],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "run_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["artifact_id", "remote_path", "path", "relative_path", "kind", "source_output"],
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "pattern": "^artifact-[a-f0-9]{24}$"
+          },
+          "remote_path": { "type": "string" },
+          "path": { "type": "string" },
+          "relative_path": { "type": "string" },
+          "kind": {
+            "type": "string",
+            "enum": ["file", "directory", "missing", "other"]
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "checksum_status": {
+            "type": "string",
+            "enum": ["captured", "skipped-large", "not-file", "missing"]
+          },
+          "source_output": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "truncated": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/artifact-cleanup-plan.schema.json",
+  "title": "UTS Computing Artifact Cleanup Plan",
+  "type": "object",
+  "required": [
+    "mode",
+    "run_id",
+    "profile_id",
+    "platform",
+    "plan_hash",
+    "cleanup_plan_hash",
+    "generated_at",
+    "remote_candidates",
+    "local_candidates",
+    "cleanup_plan_path",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "mode": { "const": "dry-run" },
+    "run_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "cleanup_plan_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "remote_candidates": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "local_candidates": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "cleanup_plan_path": { "type": "string" },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

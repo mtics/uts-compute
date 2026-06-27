@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" viewBox="0 0 680 496" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>uts-compute — the trust loop</title>
+  <desc>A horizontal-then-branching trust pipeline: an intent becomes a dry-run PLAN that emits a plan_hash; a GATE recomputes that hash from the saved artifact's own bytes and checks the live quota envelope; flow forks into a Tier-A autonomous path (reversible and conformant) and a Tier-B human-token path (irreversible actions: cancel, delete, migrate); both funnel through the single executor seam — the only door to the outside world, with shell disabled, an argv allowlist and realpath guards — out to UTS HPC, then back through monitor, diagnose, collect, looping to re-plan. Autonomous where machine-verifiable; confirm where irreversible.</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <style>
+    svg{--c1:#1f2328;--c2:#59636e;--ac:#0969da;--bd:#d0d7de}
+    @media (prefers-color-scheme:dark){svg{--c1:#e6edf3;--c2:#8b949e;--ac:#58a6ff;--bd:#3d444d}}
+    .t1{font-family:system-ui,sans-serif;font-size:13.5px;font-weight:600;fill:var(--c1)}
+    .tm{font-family:ui-monospace,monospace;font-size:11px;fill:var(--c2)}
+    .lbl{font-family:system-ui,sans-serif;font-size:10px;fill:var(--c2)}
+    .cap{font-family:system-ui,sans-serif;font-size:11px;fill:var(--c2)}
+    .ac{fill:var(--ac)}
+    .box{fill:none;stroke:var(--bd);stroke-width:1.2}
+    .hot{fill:none;stroke:var(--ac);stroke-width:2}
+    .arr{stroke:var(--c2);stroke-width:1.3;fill:none}
+  </style>
+
+  <text class="cap" x="40" y="22">One client-neutral core — the trust loop (autonomous where verifiable, confirm where irreversible)</text>
+
+  <!-- PLAN -->
+  <rect class="box" x="240" y="34" width="200" height="42" rx="6"/>
+  <text class="t1" x="340" y="53" text-anchor="middle">PLAN</text>
+  <text class="tm" x="340" y="69" text-anchor="middle">dry-run · emits plan_hash</text>
+  <line class="arr" x1="340" y1="76" x2="340" y2="96" marker-end="url(#ah)"/>
+  <text class="lbl" x="348" y="91">plan_hash</text>
+
+  <!-- GATE (climax) -->
+  <rect class="hot" x="200" y="98" width="280" height="60" rx="6"/>
+  <text class="t1 ac" x="340" y="118" text-anchor="middle">GATE</text>
+  <text class="tm" x="340" y="134" text-anchor="middle">recompute plan_hash from saved bytes</text>
+  <text class="tm" x="340" y="149" text-anchor="middle">+ live quota envelope, ≤15 min fresh</text>
+
+  <!-- fork -->
+  <path class="arr" d="M300 158 L215 184" marker-end="url(#ah)"/>
+  <path class="arr" d="M380 158 L465 184" marker-end="url(#ah)"/>
+  <text class="lbl" x="150" y="178">reversible</text>
+  <text class="lbl" x="492" y="178">irreversible</text>
+
+  <!-- Tier A -->
+  <rect class="box" x="100" y="186" width="220" height="54" rx="6"/>
+  <text class="t1" x="210" y="206" text-anchor="middle">Tier A · autonomous</text>
+  <text class="tm" x="210" y="222" text-anchor="middle">conformant → no human</text>
+  <text class="tm" x="210" y="235" text-anchor="middle">submit · transfer · fetch</text>
+
+  <!-- Tier B -->
+  <rect class="box" x="360" y="186" width="220" height="54" rx="6"/>
+  <text class="t1" x="470" y="206" text-anchor="middle">Tier B · human token</text>
+  <text class="tm" x="470" y="222" text-anchor="middle">host-supplied confirm</text>
+  <text class="tm" x="470" y="235" text-anchor="middle">cancel · delete · migrate</text>
+
+  <!-- merge to seam -->
+  <path class="arr" d="M210 240 L320 266" marker-end="url(#ah)"/>
+  <path class="arr" d="M470 240 L360 266" marker-end="url(#ah)"/>
+
+  <!-- EXECUTOR SEAM (the one door) -->
+  <rect class="hot" x="170" y="268" width="340" height="60" rx="6"/>
+  <text class="t1 ac" x="340" y="288" text-anchor="middle">EXECUTOR SEAM — the only door out</text>
+  <text class="tm" x="340" y="304" text-anchor="middle">shell:false · argv allowlist · realpath guard</text>
+  <text class="tm" x="340" y="319" text-anchor="middle">swap a stub → fully testable, never hits HPC</text>
+  <line class="arr" x1="340" y1="328" x2="340" y2="348" marker-end="url(#ah)"/>
+
+  <!-- UTS HPC -->
+  <rect class="box" x="250" y="350" width="180" height="38" rx="6"/>
+  <text class="t1" x="340" y="374" text-anchor="middle">UTS HPC — PBS / iHPC</text>
+  <line class="arr" x1="340" y1="388" x2="340" y2="408" marker-end="url(#ah)"/>
+  <text class="lbl" x="348" y="403">results</text>
+
+  <!-- monitor -->
+  <rect class="box" x="220" y="410" width="240" height="38" rx="6"/>
+  <text class="t1" x="340" y="434" text-anchor="middle">monitor → diagnose → collect</text>
+
+  <!-- loop back to PLAN -->
+  <path class="arr" d="M460 429 C 600 429 600 55 442 55" marker-end="url(#ah)"/>
+  <text class="lbl" x="606" y="245" transform="rotate(-90 606 245)" text-anchor="middle">re-plan / retry</text>
+
+  <text class="t1" x="40" y="478">Autonomous where machine-verifiable · confirm where irreversible.</text>
+</svg>

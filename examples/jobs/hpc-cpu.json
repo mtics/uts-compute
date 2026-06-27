@@ -1,0 +1,21 @@
+{
+  "run_id": "dry-run-hpc-cpu",
+  "profile_id": "uts-hpc-account-a",
+  "platform": "uts-hpc",
+  "experiment": {
+    "name": "CPU dry-run smoke test",
+    "description": "Render a deterministic PBS CPU script without submitting it.",
+    "tags": ["m1", "dry-run"]
+  },
+  "resources": {
+    "queue": "smallq",
+    "ncpus": 2,
+    "memory_gb": 4,
+    "walltime": "01:00:00",
+    "ngpus": 0
+  },
+  "command": "python train.py --epochs 1",
+  "workdir": "/shared/homes/${USER}/experiments/dry-run-hpc-cpu",
+  "inputs": ["train.py"],
+  "outputs": ["logs/", "metrics.json"]
+}

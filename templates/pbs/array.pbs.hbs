@@ -1,0 +1,15 @@
+#!/bin/bash
+#PBS -N {{run_id}}
+#PBS -q {{queue}}
+#PBS -J {{array_start}}-{{array_end}}%{{array_max_concurrent}}
+#PBS -l ncpus={{ncpus}}
+#PBS -l mem={{memory_gb}}gb
+#PBS -l walltime={{walltime}}
+#PBS -o {{log_dir}}/{{run_id}}.^array_index^.out
+#PBS -e {{log_dir}}/{{run_id}}.^array_index^.err
+
+set -euo pipefail
+
+mkdir -p "{{workdir}}"
+cd "{{workdir}}"
+{{command}}

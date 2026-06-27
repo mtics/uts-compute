@@ -1,0 +1,280 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/run-record.schema.json",
+  "title": "UTS Computing Run Record",
+  "type": "object",
+  "required": ["run_id", "profile_id", "platform", "status", "created_at", "events"],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "run_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "remote_job_id": { "type": ["string", "null"] },
+    "rev": { "type": "integer", "minimum": 0 },
+    "project": { "type": "string" },
+    "project_hash": { "type": "string", "pattern": "^proj-[0-9a-f]{12}$" },
+    "campaign_id": { "type": "string" },
+    "job_type": { "type": "string" },
+    "plan_hash": { "type": "string" },
+    "quota_snapshot_id": { "type": "string" },
+    "approval": {
+      "type": "object",
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["not_required", "required", "approved", "rejected", "expired"]
+        },
+        "approved_at": { "type": "string", "format": "date-time" },
+        "approved_by": { "type": "string" },
+        "reason": { "type": "string" },
+        "bound_plan_hash": { "type": "string" },
+        "bound_quota_snapshot_id": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "submission": {
+      "type": "object",
+      "required": ["account_label", "cluster", "requested", "submitted_at"],
+      "properties": {
+        "account_label": { "type": "string" },
+        "cluster": { "type": "string" },
+        "queue": { "type": "string" },
+        "node": { "type": "string" },
+        "requested": {
+          "type": "object",
+          "properties": {
+            "ncpus": { "type": "integer" },
+            "memory_gb": { "type": "number" },
+            "walltime": { "type": "string" },
+            "ngpus": { "type": "integer" }
+          },
+          "additionalProperties": false
+        },
+        "submitted_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "placement": {
+      "type": "object",
+      "required": ["hostname"],
+      "properties": {
+        "hostname": { "type": "string" },
+        "node_id": { "type": "string" },
+        "gpu_index": { "type": "integer" },
+        "slots_per_gpu": { "type": "integer" },
+        "gpu_slot": { "type": "integer", "minimum": 0 },
+        "started_at": { "type": "string", "format": "date-time" },
+        "placement_hash": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "observed": {
+      "type": "object",
+      "required": ["node", "pid"],
+      "properties": {
+        "node": { "type": "string" },
+        "pid": { "type": "integer", "minimum": 2 }
+      },
+      "additionalProperties": false
+    },
+    "adoption": {
+      "type": "object",
+      "required": ["terminal_record", "intent", "lineage", "adopted_at"],
+      "properties": {
+        "terminal_record": { "type": "string", "enum": ["agent_authored", "external_observed"] },
+        "intent": { "type": "string", "enum": ["user_declared", "unverified"] },
+        "lineage": { "type": "string", "enum": ["lineage_proven", "not_lineage_proven"] },
+        "queue_id": { "type": "string" },
+        "discovered_via": { "type": "string", "enum": ["qstat", "node_observed"] },
+        "adopted_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "lease_owner": {
+      "type": "object",
+      "required": ["client", "device_id"],
+      "properties": {
+        "client": { "type": "string" },
+        "device_id": { "type": "string" },
+        "issued_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "queue_position": { "type": "integer", "minimum": 0 },
+    "auto_progressed": {
+      "type": "object",
+      "required": ["by_node_agent"],
+      "properties": {
+        "by_node_agent": { "type": "boolean" },
+        "freed_by_run_id": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "attempt": { "type": "integer", "minimum": 0 },
+    "queue_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{6,64}$" },
+    "usage": {
+      "type": "object",
+      "required": ["walltime_seconds", "core_hours", "gpu_hours"],
+      "properties": {
+        "walltime_seconds": { "type": "number" },
+        "mem_gb": { "type": "number" },
+        "ncpus": { "type": "integer" },
+        "ngpus": { "type": "integer" },
+        "core_hours": { "type": "number" },
+        "gpu_hours": { "type": "number" },
+        "cpu_efficiency_percent": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "supervisor": {
+      "type": "object",
+      "required": ["pid", "metadata_path", "stdout_path", "stderr_path"],
+      "properties": {
+        "pid": { "type": "integer", "minimum": 2 },
+        "node_id": { "type": "string" },
+        "metadata_path": { "type": "string" },
+        "stdout_path": { "type": "string" },
+        "stderr_path": { "type": "string" },
+        "started_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "string",
+      "enum": ["planned", "submitting", "submitted", "running", "finished", "failed", "cancelled", "unknown"]
+    },
+    "retry_of": { "$ref": "#/$defs/retry_lineage" },
+    "sweep_retry_of": { "$ref": "#/$defs/sweep_retry_lineage" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "kind", "summary"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "kind": { "type": "string" },
+          "summary": { "type": "string" },
+          "redacted_command": { "type": "string" },
+          "artifact_path": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "required": ["captured_at", "command", "git"],
+      "properties": {
+        "captured_at": { "type": "string", "format": "date-time" },
+        "command": { "type": "string" },
+        "git": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["sha", "branch", "dirty"],
+              "properties": {
+                "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+                "branch": { "type": "string" },
+                "dirty": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["available"],
+              "properties": { "available": { "const": false } },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "environment": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["python_version", "packages_sha256"],
+              "properties": {
+                "python_version": { "type": ["string", "null"] },
+                "packages_sha256": {
+                  "oneOf": [{ "type": "string", "pattern": "^[a-f0-9]{64}$" }, { "type": "null" }]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["available"],
+              "properties": { "available": { "const": false } },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "retry_lineage": {
+      "type": "object",
+      "required": ["source_run_id", "source_status", "source_plan_hash", "planned_at"],
+      "properties": {
+        "source_run_id": {
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+        },
+        "source_status": {
+          "type": "string",
+          "enum": ["failed", "cancelled"]
+        },
+        "source_plan_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "planned_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "sweep_retry_lineage": {
+      "type": "object",
+      "required": ["source_run_id", "source_status", "source_plan_hash", "failed_indices", "index_map", "planned_at"],
+      "properties": {
+        "source_run_id": {
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+        },
+        "source_status": {
+          "type": "string",
+          "enum": ["finished"]
+        },
+        "source_plan_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "failed_indices": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "minItems": 1
+        },
+        "index_map": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "planned_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

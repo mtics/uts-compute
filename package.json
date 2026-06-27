@@ -1,0 +1,41 @@
+{
+  "name": "uts-compute",
+  "version": "0.1.5",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p mcp-server/tsconfig.json",
+    "postbuild": "node scripts/copy-progressor.mjs",
+    "clean:scratch": "node scripts/clean-scratch.mjs",
+    "lint": "node mcp-server/scripts/lint-no-dup-lib-defs.mjs",
+    "pretest": "node scripts/clean-scratch.mjs && npm run lint",
+    "test": "npm run build && node --test 'mcp-server/tests/**/*.test.mjs' 'webui/tests/*.test.mjs'",
+    "posttest": "node scripts/clean-scratch.mjs",
+    "prewebui": "node scripts/webui-port.mjs stop",
+    "webui": "npm run build && node webui/server.mjs",
+    "webui:demo": "npm run build && node webui/demo-seed.mjs && node webui/server.mjs",
+    "webui:stop": "node scripts/webui-port.mjs stop",
+    "webui:status": "node scripts/webui-port.mjs status",
+    "validate:plugin": "npm run build && node scripts/validate-plugin-package.mjs",
+    "test:python": "node scripts/run-pytest.mjs",
+    "smoke:plugin": "npm run smoke:plugin:host-neutral",
+    "smoke:plugin:host-neutral": "npm run build && node scripts/host-neutral-plugin-smoke.mjs",
+    "client-smoke:prompt": "node scripts/client-installed-smoke.mjs --prompt-only",
+    "client-smoke:validate": "npm run build && node scripts/validate-client-smoke-evidence.mjs",
+    "validate:mcpb": "npx -y @anthropic-ai/mcpb@latest validate manifest.json",
+    "pack:mcpb": "npm run build && npx -y @anthropic-ai/mcpb@latest pack . uts-compute.mcpb",
+    "mcp:start": "npm run build && node mcp-server/dist/index.js",
+    "dry-run:sample": "npm run build && node mcp-server/dist/cli.js examples/jobs/hpc-cpu.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "typescript": "^5.9.3"
+  }
+}

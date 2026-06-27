@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/artifact-fetch-record.schema.json",
+  "title": "UTS Computing Artifact Fetch Record",
+  "type": "object",
+  "required": ["run_id", "profile_id", "platform", "artifact_id", "kind", "observed_at", "evidence"],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "run_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "artifact_id": {
+      "type": "string",
+      "pattern": "^artifact-[a-f0-9]{24}$"
+    },
+    "approval_id": {
+      "type": "string",
+      "pattern": "^approval-[A-Za-z0-9_.:-]{1,220}$"
+    },
+    "kind": { "const": "fetch" },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "evidence": {
+      "type": "object",
+      "required": ["command", "artifact_path", "local_path", "size_bytes", "sha256"],
+      "properties": {
+        "command": {
+          "type": "object",
+          "required": ["program", "args", "remote_argv"],
+          "properties": {
+            "program": { "const": "ssh" },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "remote_argv": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "artifact_path": { "type": "string" },
+        "local_path": { "type": "string" },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

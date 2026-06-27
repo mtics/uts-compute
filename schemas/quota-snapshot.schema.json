@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/quota-snapshot.schema.json",
+  "title": "UTS Computing Quota Snapshot",
+  "type": "object",
+  "required": [
+    "snapshot_id",
+    "profile_id",
+    "platform",
+    "observed_at",
+    "source",
+    "freshness",
+    "summary",
+    "commands",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "snapshot_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "source": { "const": "quotas.refresh" },
+    "freshness": {
+      "type": "string",
+      "enum": ["fresh", "stale", "unknown"]
+    },
+    "raw_evidence_path": { "type": "string" },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "identity": { "type": "object" },
+        "queues": { "type": "object" },
+        "node_families": { "type": "object" },
+        "sessions": { "type": "object" },
+        "storage": { "type": "object" },
+        "running_work": { "type": "object" }
+      },
+      "additionalProperties": false
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status", "command", "summary"],
+        "properties": {
+          "id": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed", "skipped"]
+          },
+          "command": {
+            "type": "object",
+            "required": ["program", "args"],
+            "properties": {
+              "program": { "type": "string" },
+              "args": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "remote_argv": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          },
+          "exit_code": { "type": ["integer", "null"] },
+          "duration_ms": { "type": "integer", "minimum": 0 },
+          "summary": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

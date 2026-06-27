@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS iHPC Background Run"
+  short_description: "Plan supervised background experiments for UTS iHPC"
+  default_prompt: "Prepare an iHPC supervised-run dry-run plan, and start or monitor live work only through available MCP tools."

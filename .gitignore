@@ -1,0 +1,33 @@
+# Local secrets and account profiles
+profiles/profiles.local.yaml
+profiles/*.local.yaml
+# Real-id -> placeholder pairs consumed by scripts/sync-ihpc-scheduler.sh (names real account ids)
+scripts/redactions.local.txt
+
+# Local runtime state and audit database
+.uts-computing/
+evidence/
+
+# Build outputs
+mcp-server/dist/
+dist/
+build/
+node_modules/
+
+# Packed MCP bundle artifacts
+*.mcpb
+dist-bundle/
+
+# Logs and temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Playwright MCP investigation artifacts (screenshots, console/page snapshots)
+.playwright-mcp/
+
+# Python artifacts (vendored ihpc-scheduler/ tooling)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/access-check-result.schema.json",
+  "title": "UTS Computing Access Check Result",
+  "type": "object",
+  "required": [
+    "mode",
+    "profile_id",
+    "platform",
+    "observed_at",
+    "requires_vpn",
+    "host_alias",
+    "overall_status",
+    "checks",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "mode": { "const": "read-only" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "requires_vpn": { "type": "boolean" },
+    "host_alias": { "type": "string" },
+    "resolved_host": { "type": "string" },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "overall_status": {
+      "type": "string",
+      "enum": ["passed", "failed", "partial"]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "summary"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["profile", "vpn", "ssh-config", "dns", "tcp", "host-key", "ssh-auth", "remote-identity"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed", "skipped"]
+          },
+          "summary": { "type": "string" },
+          "observed_at": { "type": "string", "format": "date-time" },
+          "command": {
+            "type": "object",
+            "required": ["program", "args"],
+            "properties": {
+              "program": { "type": "string" },
+              "args": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          },
+          "duration_ms": { "type": "integer", "minimum": 0 },
+          "details": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "error_kind": {
+      "type": "string",
+      "enum": ["timeout", "unreachable", "dns"]
+    },
+    "network_hint": { "type": "string" },
+    "evidence_path": { "type": "string" }
+  },
+  "additionalProperties": false
+}

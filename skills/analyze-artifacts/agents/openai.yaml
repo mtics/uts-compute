@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS Artifact Analyze"
+  short_description: "Plan artifact collection and analyze local UTS run outputs"
+  default_prompt: "Analyze UTS HPC/iHPC run evidence, list declared artifacts through MCP, fetch only approved manifest file artifacts, and preserve provenance."

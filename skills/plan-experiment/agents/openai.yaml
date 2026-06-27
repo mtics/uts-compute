@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS Experiment Plan"
+  short_description: "Plan UTS HPC/iHPC experiments before submitting compute work"
+  default_prompt: "Plan an experiment for UTS HPC or iHPC using explicit profiles, quotas, safety gates, and artifact requirements."

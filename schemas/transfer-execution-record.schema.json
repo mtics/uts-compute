@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/transfer-execution-record.schema.json",
+  "title": "UTS Computing Transfer Execution Record",
+  "type": "object",
+  "required": ["run_id", "profile_id", "platform", "kind", "observed_at", "evidence"],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "run_id": {
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+    },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "approval_id": {
+      "type": "string",
+      "pattern": "^approval-[A-Za-z0-9_.:-]{1,220}$"
+    },
+    "kind": { "const": "transfer-execute" },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "evidence": {
+      "type": "object",
+      "required": ["direction", "source", "destination", "files", "total_size_bytes", "max_total_bytes", "command"],
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": ["upload", "download"]
+        },
+        "source": { "type": "string" },
+        "destination": { "type": "string" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "required": ["path", "size_bytes"],
+            "properties": {
+              "path": { "type": "string" },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "checksum_status": {
+                "type": "string",
+                "enum": ["verified", "captured", "skipped-large"]
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "checksum_status": { "const": "verified" }
+                  },
+                  "required": ["checksum_status"]
+                },
+                "then": { "required": ["sha256"] }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "checksum_status": { "const": "captured" }
+                  },
+                  "required": ["checksum_status"]
+                },
+                "then": { "required": ["sha256"] }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "checksum_status": { "const": "skipped-large" }
+                  },
+                  "required": ["checksum_status"]
+                },
+                "then": {
+                  "not": { "required": ["sha256"] }
+                }
+              },
+              {
+                "if": { "required": ["sha256"] },
+                "then": {
+                  "required": ["checksum_status"],
+                  "properties": {
+                    "checksum_status": { "enum": ["verified", "captured"] }
+                  }
+                }
+              }
+            ],
+            "additionalProperties": false
+          }
+        },
+        "checksum_policy": {
+          "type": "object",
+          "required": ["algorithm", "max_file_bytes"],
+          "properties": {
+            "algorithm": { "const": "sha256" },
+            "max_file_bytes": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "total_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_total_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "command": {
+          "type": "object",
+          "required": ["program", "args"],
+          "properties": {
+            "program": { "const": "rsync" },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

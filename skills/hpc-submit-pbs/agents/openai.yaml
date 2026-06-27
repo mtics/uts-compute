@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS HPC PBS Submit"
+  short_description: "Prepare and dry-run PBS jobs on UTS HPC"
+  default_prompt: "Prepare and validate a PBS dry-run plan for UTS HPC, using live submission and monitoring only through available MCP tools."

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mtics/uts-compute",
+  "description": "MCP server for UTS HPC and UTS iHPC experiment workflows: job planning, autonomous conformance-gated submission, monitoring, fixed-file transfers, and artifact collection.",
+  "version": "0.1.5",
+  "repository": {
+    "url": "https://github.com/mtics/uts-compute",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/mtics/uts-compute/releases/download/v0.1.5/uts-compute.mcpb",
+      "fileSha256": "REPLACE_WITH_SHA256_OF_PACKED_MCPB",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

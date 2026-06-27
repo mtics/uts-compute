@@ -1,0 +1,7 @@
+{
+  "run_id": "dry-run-transfer-upload",
+  "profile_id": "uts-hpc-account-a",
+  "direction": "upload",
+  "source": "/Users/example/project/data",
+  "destination": "/shared/homes/${USER}/experiments/dry-run-hpc-cpu/data"
+}

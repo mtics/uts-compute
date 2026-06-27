@@ -1,0 +1,101 @@
+version: 1
+profiles:
+  - profile_id: uts-hpc-account-a
+    platform: uts-hpc
+    account_label: hpc-a
+    login:
+      host_alias: uts-hpc
+      username_ref: UTS_HPC_ACCOUNT_A_USER
+      ssh_agent: true
+      requires_vpn: true
+    defaults:
+      queue: workq
+      # Campaign-ledger attribution labels (DISCLOSURE, not credentials). Placeholders only — these
+      # are non-secret labels for audit/attribution and must NEVER carry a real account id.
+      owner: owner-a
+      allocation: alloc-a
+      workspace: /shared/homes/${USER}/experiments
+      scratch: /scratch/${USER}
+    quota_snapshot: null
+
+  - profile_id: uts-hpc-account-b
+    platform: uts-hpc
+    account_label: hpc-b
+    login:
+      host_alias: uts-hpc-alt
+      username_ref: UTS_HPC_ACCOUNT_B_USER
+      ssh_agent: true
+      requires_vpn: true
+    defaults:
+      queue: workq
+      owner: owner-b
+      allocation: alloc-b
+      workspace: /shared/homes/${USER}/experiments
+      scratch: /scratch/${USER}
+    quota_snapshot: null
+
+  - profile_id: uts-ihpc-account-a
+    platform: uts-ihpc
+    account_label: ihpc-a
+    login:
+      host_alias: uts-ihpc-access
+      username_ref: UTS_IHPC_ACCOUNT_A_USER
+      ssh_agent: true
+      requires_vpn: true
+    defaults:
+      node_family: mars
+      # UTS iHPC only: GPUs physically present on a node of this node_family. The campaign scheduler
+      # places at most one job per GPU index, so this bounds maxConcurrent — without it a large
+      # maxConcurrent would plan jobs onto GPU indices the node does not have. Absent = a conservative
+      # documented default (8). Set it to YOUR node's real GPU count for tighter placement.
+      # node_gpu_count: 4
+      # Optional: how the daemonized progressor should be invoked on the node. Absent = 'console'
+      # (a clean SSH argv), which is the default Codex/Claude both use. 'runner' is the only sub-field
+      # ('uv'/'cron_reboot' are reserved for the progressor to honor later); set it only if needed.
+      # node_scheduler:
+      #   runner: uv          # console | uv | cron_reboot
+      owner: owner-a
+      allocation: alloc-a
+      # UTS iHPC only: per-pool simultaneous node caps. Read these from YOUR portal overview
+      # "My Node Limits" — it is the authoritative, per-user source (the public docs table is only
+      # the default for plain primary groups; special/private access has bespoke, smaller pools).
+      # Each entry is an independent pool of node families sharing ONE cap. quotas.capacity advises
+      # held-vs-limit headroom per pool. Example of a custom-access account (total 4):
+      node_limits:
+        - families: [mars, mercury, venus]
+          limit: 1
+        - families: [saturn, neptune]
+          limit: 1
+        - families: [turing]
+          limit: 2
+      workspace: /data/${USER}/experiments
+      scratch: /scratch/${USER}
+    quota_snapshot: null
+
+  - profile_id: uts-ihpc-account-b
+    platform: uts-ihpc
+    account_label: ihpc-b
+    login:
+      host_alias: uts-ihpc-access-alt
+      username_ref: UTS_IHPC_ACCOUNT_B_USER
+      ssh_agent: true
+      requires_vpn: true
+    defaults:
+      node_family: mars
+      owner: owner-b
+      allocation: alloc-b
+      # UTS iHPC only: per-pool simultaneous node caps. Read these from YOUR portal overview
+      # "My Node Limits" — it is the authoritative, per-user source (the public docs table is only
+      # the default for plain primary groups; special/private access has bespoke, smaller pools).
+      # Each entry is an independent pool of node families sharing ONE cap. quotas.capacity advises
+      # held-vs-limit headroom per pool. Example of a custom-access account (total 4):
+      node_limits:
+        - families: [mars, mercury, venus]
+          limit: 1
+        - families: [saturn, neptune]
+          limit: 1
+        - families: [turing]
+          limit: 2
+      workspace: /data/${USER}/experiments
+      scratch: /scratch/${USER}
+    quota_snapshot: null

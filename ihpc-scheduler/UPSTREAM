@@ -1,0 +1,14 @@
+# FIRST-PARTY (2026-06-20): consolidated from mtics/uts-ihpc into this plugin.
+# No longer synced from upstream; edit ihpc-scheduler/ directly. The fields below
+# are a one-time provenance record of the origin, not a live sync target.
+repo: git@github.com:mtics/uts-ihpc.git
+sha: e6883a9
+synced_at: 2026-06-20
+vendored: src/scheduler, src/scanner, tests/test_scheduler_*.py, configs/*.example.yaml, pyproject.toml
+local_additions:
+  - src/scheduler/_contract.py            (contract-version stamp; not upstream)
+  - src/scheduler/cli.py                  (added --print-contract-version hook; documented patch)
+  - tests/test_scheduler_contract.py      (golden test for the contract stamp; not upstream)
+local_redactions:
+  - real iHPC usernames in vendored *.py example strings replaced with neutral
+    placeholders, per the repo secrets policy (pairs in gitignored scripts/redactions.local.txt)

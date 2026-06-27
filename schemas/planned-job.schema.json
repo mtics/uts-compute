@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/planned-job.schema.json",
+  "title": "UTS Computing Planned Job Artifact",
+  "type": "object",
+  "required": [
+    "mode",
+    "run_id",
+    "profile_id",
+    "platform",
+    "plan_hash",
+    "template",
+    "script",
+    "normalized_job_spec",
+    "approval",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "mode": { "const": "dry-run" },
+    "run_id": {
+      "type": "string",
+      "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+    },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "quota_snapshot_id": { "type": "string" },
+    "template": {
+      "type": "string",
+      "enum": ["pbs-cpu", "pbs-gpu", "pbs-array", "ihpc-background"]
+    },
+    "script": {
+      "type": "string",
+      "minLength": 1
+    },
+    "command_argv": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "normalized_job_spec": { "$ref": "#/$defs/job_spec" },
+    "approval": {
+      "type": "object",
+      "required": ["required", "reasons"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "policy": {
+          "type": "string",
+          "enum": ["advisory"],
+          "description": "ADR 0004: marks risk reasons as advisory display-only metadata that no longer gate submission."
+        }
+      },
+      "additionalProperties": false
+    },
+    "approval_operation": {
+      "type": "string",
+      "enum": ["jobs.submit", "jobs.retry"]
+    },
+    "retry_of": { "$ref": "#/$defs/retry_lineage" },
+    "sweep_retry_of": { "$ref": "#/$defs/sweep_retry_lineage" },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "spec_diff": {
+      "type": "object",
+      "required": ["against_run_id", "changes"],
+      "properties": {
+        "against_run_id": { "type": "string" },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["field"],
+            "properties": { "field": { "type": "string" }, "from": {}, "to": {} },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "audit_path": { "type": "string" },
+    "plan_path": { "type": "string" }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "platform": { "const": "uts-ihpc" }
+        },
+        "required": ["platform"]
+      },
+      "then": {
+        "required": ["command_argv"]
+      }
+    }
+  ],
+  "$defs": {
+    "retry_lineage": {
+      "type": "object",
+      "required": ["source_run_id", "source_status", "source_plan_hash", "planned_at"],
+      "properties": {
+        "source_run_id": {
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+        },
+        "source_status": {
+          "type": "string",
+          "enum": ["failed", "cancelled"]
+        },
+        "source_plan_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "planned_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "sweep_retry_lineage": {
+      "type": "object",
+      "required": ["source_run_id", "source_status", "source_plan_hash", "failed_indices", "index_map", "planned_at"],
+      "properties": {
+        "source_run_id": {
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+        },
+        "source_status": {
+          "type": "string",
+          "enum": ["finished"]
+        },
+        "source_plan_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "failed_indices": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "minItems": 1
+        },
+        "index_map": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "planned_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "job_spec": {
+      "type": "object",
+      "required": ["run_id", "profile_id", "platform", "experiment", "resources", "command"],
+      "properties": {
+        "run_id": {
+          "type": "string",
+          "pattern": "^(?!.*\\.\\.)[A-Za-z0-9][A-Za-z0-9_.-]{2,127}$"
+        },
+        "profile_id": { "type": "string" },
+        "platform": {
+          "type": "string",
+          "enum": ["uts-hpc", "uts-ihpc"]
+        },
+        "experiment": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "job_type": { "type": "string" },
+            "tags": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "queue": { "type": "string" },
+            "node_family": { "type": "string" },
+            "ncpus": { "type": "integer", "minimum": 1 },
+            "memory_gb": { "type": "integer", "minimum": 1 },
+            "walltime": {
+              "type": "string",
+              "pattern": "^[0-9]{1,3}:[0-5][0-9]:[0-5][0-9]$"
+            },
+            "ngpus": { "type": "integer", "minimum": 0 },
+            "array": {
+              "type": "object",
+              "required": ["start", "end"],
+              "properties": {
+                "start": { "type": "integer", "minimum": 0 },
+                "end": { "type": "integer", "minimum": 0 },
+                "max_concurrent": { "type": "integer", "minimum": 1 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "command": { "type": "string" },
+        "workdir": { "type": "string" },
+        "inputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "resumable": {
+          "type": "object",
+          "required": ["checkpoint_path", "resume_flag"],
+          "properties": {
+            "checkpoint_path": { "type": "string" },
+            "resume_flag": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "approval": {
+          "type": "object",
+          "properties": {
+            "required": { "type": "boolean" },
+            "reasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

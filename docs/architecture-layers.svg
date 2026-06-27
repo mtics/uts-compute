@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" viewBox="0 0 680 440" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>uts-compute — layered structure</title>
+  <desc>Six dependency layers stacked from the Tool surface down to leaf modules; each depends only downward, with no cycles, marked by a single down arrow on the left. The Capability layer carries the injected executor seam. A right-hand sidebar names the cross-cutting safety spine that applies to every live action.</desc>
+  <defs>
+    <marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M1 1L9 5L1 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <style>
+    svg{--c1:#1f2328;--c2:#59636e;--ac:#0969da;--bd:#d0d7de}
+    @media (prefers-color-scheme:dark){svg{--c1:#e6edf3;--c2:#8b949e;--ac:#58a6ff;--bd:#3d444d}}
+    .hd{font-family:system-ui,sans-serif;font-size:12px;font-weight:600;fill:var(--c1)}
+    .h2{font-family:system-ui,sans-serif;font-size:11px;fill:var(--c2)}
+    .nm{font-family:system-ui,sans-serif;font-size:14px;font-weight:600;fill:var(--c1)}
+    .md{font-family:ui-monospace,monospace;font-size:11px;fill:var(--c2)}
+    .sh{font-family:system-ui,sans-serif;font-size:11.5px;font-weight:600;fill:var(--ac)}
+    .sb{font-family:ui-monospace,monospace;font-size:11px;fill:var(--c2)}
+    .lg{font-family:system-ui,sans-serif;font-size:10.5px;fill:var(--c2)}
+    .ac{fill:var(--ac)}
+    .box{fill:none;stroke:var(--bd);stroke-width:1.2}
+    .arr{stroke:var(--c2);stroke-width:1.3;fill:none}
+  </style>
+
+  <text class="hd" x="40" y="24">One client-neutral core · distributed over open standards (MCP + Agent Skills)</text>
+  <text class="h2" x="40" y="42">any compatible host runs the same build</text>
+
+  <line class="arr" x1="48" y1="72" x2="48" y2="386" marker-end="url(#ah2)"/>
+
+  <rect class="box" x="60" y="72" width="400" height="44" rx="6"/>
+  <text class="nm" x="76" y="90">Tool surface</text>
+  <text class="md" x="76" y="107">index.ts · 46 tools · prompts · resources</text>
+
+  <rect class="box" x="60" y="126" width="400" height="44" rx="6"/>
+  <text class="nm" x="76" y="144">Composition</text>
+  <text class="md" x="76" y="161">planner · approvals · retry · diagnose</text>
+
+  <rect class="box" x="60" y="180" width="400" height="44" rx="6"/>
+  <rect x="60" y="180" width="3" height="44" rx="1.5" fill="var(--ac)"/>
+  <text class="nm" x="76" y="198">Capability <tspan class="ac">← executor seam</tspan></text>
+  <text class="md" x="76" y="215">jobs · submit · transfer · artifacts</text>
+
+  <rect class="box" x="60" y="234" width="400" height="44" rx="6"/>
+  <text class="nm" x="76" y="252">IO / persistence</text>
+  <text class="md" x="76" y="269">audit · config · plan-store · migrations</text>
+
+  <rect class="box" x="60" y="288" width="400" height="44" rx="6"/>
+  <text class="nm" x="76" y="306">Pure logic</text>
+  <text class="md" x="76" y="323">conformance · accounting · sweep</text>
+
+  <rect class="box" x="60" y="342" width="400" height="44" rx="6"/>
+  <text class="nm" x="76" y="360">Leaves</text>
+  <text class="md" x="76" y="377">types · paths · ids · validation</text>
+
+  <!-- safety spine sidebar -->
+  <rect class="box" x="480" y="72" width="160" height="314" rx="6"/>
+  <rect x="480" y="72" width="3" height="314" rx="1.5" fill="var(--ac)"/>
+  <text class="sh" x="496" y="94">SAFETY SPINE</text>
+  <text class="sb" x="496" y="110" font-size="10px">every live action</text>
+  <circle class="ac" cx="500" cy="140" r="2.4"/><text class="sb" x="510" y="144">plan_hash re-verify</text>
+  <circle class="ac" cx="500" cy="180" r="2.4"/><text class="sb" x="510" y="184">quota-envelope gate</text>
+  <circle class="ac" cx="500" cy="220" r="2.4"/><text class="sb" x="510" y="224">SSH argv allowlist</text>
+  <circle class="ac" cx="500" cy="260" r="2.4"/><text class="sb" x="510" y="264">realpath guard</text>
+  <circle class="ac" cx="500" cy="300" r="2.4"/><text class="sb" x="510" y="304">secret redaction</text>
+  <circle class="ac" cx="500" cy="340" r="2.4"/><text class="sb" x="510" y="344">validated evidence</text>
+  <text class="sb" x="496" y="374" font-size="10px">ADR 0004: verify → autonomy</text>
+
+  <text class="lg" x="40" y="412">Stack = dependency, strictly downward, no cycles.  Right = cross-cutting safety spine.</text>
+  <text class="lg" x="40" y="430">Capability is the only layer that spawns real ssh / rsync / qsub.</text>
+</svg>

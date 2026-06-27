@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/state-migration-plan.schema.json",
+  "title": "UTS Computing State Migration Dry-Run Plan",
+  "type": "object",
+  "required": [
+    "mode",
+    "generated_at",
+    "target_schema_version",
+    "plan_hash",
+    "writes_planned",
+    "files_read",
+    "files_would_write",
+    "detected_schema_versions",
+    "approval_state_would_change",
+    "run_state_would_change",
+    "summary",
+    "records",
+    "cannot_migrate",
+    "warnings"
+  ],
+  "properties": {
+    "mode": { "const": "dry-run" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "target_schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "plan_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "writes_planned": { "const": false },
+    "files_read": { "type": "array", "items": { "type": "string" } },
+    "files_would_write": { "type": "array", "items": { "type": "string" } },
+    "detected_schema_versions": { "type": "array", "items": { "type": "string" } },
+    "approval_state_would_change": { "const": false },
+    "run_state_would_change": { "const": false },
+    "summary": {
+      "type": "object",
+      "required": ["total_records", "current", "would_update", "manual_review", "blocked", "missing_schema_version", "invalid"],
+      "properties": {
+        "total_records": { "type": "integer", "minimum": 0 },
+        "current": { "type": "integer", "minimum": 0 },
+        "would_update": { "type": "integer", "minimum": 0 },
+        "manual_review": { "type": "integer", "minimum": 0 },
+        "blocked": { "type": "integer", "minimum": 0 },
+        "missing_schema_version": { "type": "integer", "minimum": 0 },
+        "invalid": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "records": { "type": "array", "items": { "$ref": "#/$defs/record" } },
+    "cannot_migrate": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path", "errors"],
+        "properties": {
+          "kind": { "type": "string" },
+          "path": { "type": "string" },
+          "errors": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "record": {
+      "type": "object",
+      "required": [
+        "kind",
+        "path",
+        "current_schema_version",
+        "target_schema_version",
+        "status",
+        "action",
+        "valid",
+        "would_change_fields",
+        "errors",
+        "warnings"
+      ],
+      "properties": {
+        "kind": { "type": "string" },
+        "path": { "type": "string" },
+        "id": { "type": "string" },
+        "current_schema_version": { "type": ["string", "null"] },
+        "target_schema_version": { "type": "string", "enum": ["0.1.0"] },
+        "status": { "type": "string", "enum": ["current", "would-update", "manual-review", "blocked"] },
+        "action": { "type": "string", "enum": ["none", "add-schema-version", "manual-review", "invalid", "blocked"] },
+        "valid": { "type": "boolean" },
+        "would_change_fields": { "type": "array", "items": { "type": "string" } },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

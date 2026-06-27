@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS Transfer Stage"
+  short_description: "Plan and execute fixed-file UTS data transfers"
+  default_prompt: "Plan and execute approved fixed-file UTS data transfers, using the transfers.plan and transfers.execute MCP tools with quota refresh and approval safety gates."

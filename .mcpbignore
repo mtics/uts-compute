@@ -1,0 +1,29 @@
+# Files excluded from the .mcpb bundle (the bundle ships only the runtime MCP server).
+# Keep: manifest.json, mcp-server/dist/, node_modules/, templates/, schemas/,
+# profiles/profiles.example.yaml, package.json.
+
+.git/
+.github/
+.agents/
+.claude-plugin/
+docs/
+examples/
+skills/
+scripts/
+mcp-server/src/
+mcp-server/tests/
+mcp-server/tsconfig.json
+# The vendored scheduler tree is reference-only provenance: the scheduler was internalized into the
+# TS brain + node-side progressor (mcp-server/src/ops/scheduler/node/progressor.py), so this tree is
+# unreferenced by mcp-server/src runtime and is NOT shipped in the bundle.
+ihpc-scheduler/
+**/*.test.mjs
+.uts-computing/
+evidence/
+profiles/profiles.local.yaml
+profiles/*.local.yaml
+server.json
+*.md
+.gitignore
+.mcpbignore
+*.mcpb

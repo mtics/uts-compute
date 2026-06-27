@@ -1,0 +1,116 @@
+# iHPC Scanner Configuration
+# Copy this file to config.yaml and fill in your credentials:
+#   cp config.example.yaml config.yaml
+#
+# WARNING: config.yaml contains passwords — never commit it to version control.
+
+# ---------- Accounts ----------
+# Multiple accounts are supported. Each account gets its own SSH session
+# and node quota. Use 'name' as the identifier in CLI (--account).
+accounts:
+  - name: primary
+    username: ""
+    password: ""
+    # key_filename: "~/.ssh/id_rsa"  # Use SSH key instead of password
+
+  - name: secondary
+    username: ""
+    password: ""
+
+# Which account to use when --account is not specified.
+default_account: primary
+
+# ---------- Scanner ----------
+scanner:
+  head_node: "access.ihpc.uts.edu.au"
+  ssh_timeout: 10 # seconds, SSH handshake timeout
+  command_timeout: 30 # seconds, remote command execution timeout
+  max_workers: 8 # max parallel SSH connections for metric collection
+  cache_ttl_sec: 120 # seconds, scan result cache lifetime
+
+# ---------- Scoring ----------
+scoring:
+  # Weight preset: gpu | cpu | balanced
+  preset: gpu
+
+  # Or override with custom weights (must sum to ~1.0):
+  # custom_weights:
+  #   cpu: 0.15
+  #   mem: 0.15
+  #   gpu: 0.60
+  #   user: 0.10
+
+# ---------- Scheduler ----------
+# Values here are global defaults. A queue.yaml may override the scheduler
+# fields that affect one experiment batch, e.g. scheduler.slots_per_gpu.
+scheduler:
+  # Email notifications via the cluster's mail command.
+  # Sent on: job done, job failed (with log tail), all done, queue blocked.
+  # Remove or leave blank to disable.
+  notify_email: "<your_email_address>"
+
+  # Send "queue blocked" alert after this many minutes of no available GPU slots.
+  notify_blocked_after_min: 30
+
+  # GPU memory must be >= this % free before a GPU experiment is assigned.
+  gpu_free_threshold_pct: 40
+
+  # Optional absolute free-memory floor in MiB. Leave unset to use percentage only.
+  # min_free_mem_mb: 2048
+
+  # Protect manually started jobs and HPO runs. When true, a GPU with existing
+  # compute processes is not used unless this scheduler already tracks a job on it.
+  respect_external_gpu_processes: true
+
+  # Max concurrent experiments per GPU (default: 1).
+  # Set to 2+ for small models that don't fill a GPU's memory.
+  # slots_per_gpu: 1
+
+  # How often the scheduler checks job status (seconds).
+  poll_interval_sec: 120
+
+  # Where to write per-experiment stdout/stderr logs (default: outputs/logs/).
+  # log_dir: outputs/logs
+
+  # Where to persist scheduler state across restarts.
+  # Default is queue-scoped: outputs/scheduler_state/<queue_id>.json.
+  # Only set this explicitly when you intentionally need a fixed compatibility path.
+  # state_path: outputs/scheduler_state.json
+
+# ---------- Summarizer (optional) ----------
+# When enabled, experiment logs are sent to an LLM after each job finishes.
+# The model generates a concise summary that replaces the raw log tail in
+# notification emails. Requires: uv add litellm
+#
+# Provider is selected by the model name (litellm convention).
+# api_key is optional — omit it and set the corresponding env var instead.
+#
+# --- Anthropic ---
+# summarizer:
+#   enabled: true
+#   model: "claude-haiku-4-5-20251001"
+#   api_key: ""                  # or: export ANTHROPIC_API_KEY=...
+#   max_log_lines: 150
+#
+# --- OpenAI ---
+# summarizer:
+#   enabled: true
+#   model: "gpt-4o-mini"
+#   api_key: ""                  # or: export OPENAI_API_KEY=...
+#   max_log_lines: 150
+#
+# --- SiliconFlow 硅基流动（推荐，国内访问快，有免费额度） ---
+# summarizer:
+#   enabled: true
+#   model: "openai/Qwen/Qwen2.5-7B-Instruct"  # prefix with "openai/" for compatible APIs
+#   api_base: "https://api.siliconflow.cn/v1"
+#   api_key: ""                               # from https://cloud.siliconflow.cn
+#   max_log_lines: 150
+#
+# --- OpenAI-compatible (vLLM / Ollama / local server) ---
+# summarizer:
+#   enabled: true
+#   model: "openai/llama-3.1-8b-instruct"
+#   api_base: "http://localhost:11434/v1"
+#   api_key: "none"                           # required by protocol even if unused
+#   max_log_lines: 150

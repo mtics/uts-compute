@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/approval-record.schema.json",
+  "title": "UTS Computing Approval Record",
+  "type": "object",
+  "required": [
+    "approval_id",
+    "run_id",
+    "profile_id",
+    "platform",
+    "operation",
+    "state",
+    "reasons",
+    "requested_at",
+    "expires_at",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "approval_id": {
+      "type": "string",
+      "pattern": "^approval-[A-Za-z0-9_.:-]{1,220}$"
+    },
+    "run_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "jobs.submit",
+        "jobs.cancel",
+        "jobs.retry",
+        "transfers.execute",
+        "artifacts.fetch",
+        "artifacts.fetch.batch",
+        "artifacts.cleanup.execute"
+      ]
+    },
+    "state": {
+      "type": "string",
+      "enum": ["not_required", "required", "approved", "rejected", "expired"]
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "quota_snapshot_id": { "type": "string" },
+    "remote_job_id": { "type": "string" },
+    "scope_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "requested_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "decided_at": { "type": "string", "format": "date-time" },
+    "decided_by": { "type": "string" },
+    "decision_reason": { "type": "string" },
+    "used_at": { "type": "string", "format": "date-time" },
+    "consumed_by": { "type": "string" },
+    "command_summary": { "type": "string" },
+    "resource_summary": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "comment": "Fail-closed: plan_hash + quota_snapshot_id are OPTIONAL only for an adopted jobs.cancel approval that binds remote_job_id instead. Every other approval (no remote_job_id) MUST still carry both — the planned-job binding is unchanged.",
+      "if": { "not": { "required": ["remote_job_id"] } },
+      "then": { "required": ["plan_hash", "quota_snapshot_id"] }
+    },
+    {
+      "comment": "Only a jobs.cancel approval may carry the adopted-identity remote_job_id binding.",
+      "if": { "required": ["remote_job_id"] },
+      "then": { "properties": { "operation": { "const": "jobs.cancel" } } }
+    },
+    {
+      "comment": "Mutually exclusive shapes (NIT-2): an adopted-cancel approval binds remote_job_id and must NOT carry the planned-job binding. When remote_job_id is present, plan_hash and quota_snapshot_id are FORBIDDEN — a record carrying both shapes is invalid.",
+      "if": { "required": ["remote_job_id"] },
+      "then": {
+        "allOf": [
+          { "not": { "required": ["plan_hash"] } },
+          { "not": { "required": ["quota_snapshot_id"] } }
+        ]
+      }
+    }
+  ]
+}

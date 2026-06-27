@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+
+RUN_ID="{{run_id}}"
+WORKDIR="{{workdir}}"
+LOG_DIR="{{log_dir}}"
+COMMAND_ARGV_JSON={{command_argv_json_single_quoted}}
+
+mkdir -p "$LOG_DIR"
+
+cat > "$LOG_DIR/$RUN_ID.command_argv.json" <<EOF
+$COMMAND_ARGV_JSON
+EOF
+
+echo "dry-run only: M3c live start uses the MCP Python supervisor with shell=false"
+echo "run_id=$RUN_ID"
+echo "workdir=$WORKDIR"
+echo "log_dir=$LOG_DIR"
+echo "command_argv=$COMMAND_ARGV_JSON"

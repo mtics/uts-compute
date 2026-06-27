@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ihpc-state.schema.json",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "campaign_id", "queue_id", "lease_owner", "observed_at_node",
+               "node_clock_epoch", "slot_count", "progressor", "health", "jobs", "counts"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "campaign_id": { "type": "string", "minLength": 1 },
+    "queue_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{6,64}$" },
+    "lease_owner": {
+      "type": "object",
+      "required": ["client", "device_id"],
+      "properties": { "client": { "enum": ["claude", "codex"] }, "device_id": { "type": "string" } }
+    },
+    "observed_at_node": { "type": "string", "format": "date-time" },
+    "node_clock_epoch": { "type": "integer", "minimum": 0 },
+    "slot_count": { "type": "integer", "minimum": 1 },
+    "progressor": {
+      "type": "object",
+      "required": ["pid", "started_at_node", "heartbeat_node"],
+      "properties": {
+        "pid": { "type": "integer", "minimum": 2 },
+        "started_at_node": { "type": "string" },
+        "heartbeat_node": { "type": "string" }
+      }
+    },
+    "health": {
+      "type": "object",
+      "required": ["degraded", "breaker_tripped"],
+      "properties": {
+        "degraded": { "type": ["string", "null"] },
+        "breaker_tripped": { "type": "boolean" }
+      }
+    },
+    "jobs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["seq", "run_id", "status", "log"],
+        "properties": {
+          "seq": { "type": "integer", "minimum": 0 },
+          "run_id": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["pending", "launching", "running", "done", "failed", "cancelled", "placement_conflict"] },
+          "pid": { "type": "integer" },
+          "wrapper_pid": { "type": "integer" },
+          "gpu_index": { "type": "integer" },
+          "exit_code": { "type": "integer" },
+          "started_at_node": { "type": "string" },
+          "finished_at_node": { "type": "string" },
+          "log": { "type": "string" }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["pending", "running", "done", "failed", "cancelled", "conflict"],
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    }
+  }
+}

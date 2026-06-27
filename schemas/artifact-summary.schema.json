@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/artifact-summary.schema.json",
+  "title": "UTS Computing Artifact Summary",
+  "type": "object",
+  "required": ["mode", "run_id", "profile_id", "platform", "generated_at", "summary_path", "metrics_path", "metrics"],
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "mode": { "type": "string", "enum": ["local", "remote"] },
+    "run_id": { "type": "string" },
+    "profile_id": { "type": "string" },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "summary_path": { "type": "string" },
+    "metrics_path": { "type": "string" },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "source": { "type": "string", "enum": ["local", "remote"] },
+    "remote_path": { "type": "string" },
+    "remote_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "remote_size_bytes": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false,
+  "if": {
+    "properties": { "mode": { "const": "remote" } },
+    "required": ["mode"]
+  },
+  "then": {
+    "required": ["source", "remote_path", "remote_sha256", "remote_size_bytes"],
+    "properties": { "source": { "const": "remote" } }
+  },
+  "else": {
+    "comment": "L1 symmetry: a non-remote (mode:local) record must NOT carry remote-provenance fields.",
+    "not": {
+      "anyOf": [
+        { "required": ["source"] },
+        { "required": ["remote_path"] },
+        { "required": ["remote_sha256"] },
+        { "required": ["remote_size_bytes"] }
+      ]
+    }
+  }
+}

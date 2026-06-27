@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/client-smoke-evidence.schema.json",
+  "title": "UTS Computing Client-Installed Smoke Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "client",
+    "client_version",
+    "observed_at",
+    "operator",
+    "plugin",
+    "host_context",
+    "checks",
+    "forbidden_operations",
+    "result",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "kind": {
+      "const": "client-installed-smoke-evidence"
+    },
+    "client": {
+      "type": "string",
+      "enum": ["codex", "claude-code"]
+    },
+    "client_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmed_manual_client_run"],
+      "properties": {
+        "confirmed_manual_client_run": {
+          "const": true
+        }
+      }
+    },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "source",
+        "server_name",
+        "install_method",
+        "skills_path",
+        "mcp_server",
+        "uses_shared_skills",
+        "uses_shared_mcp_config"
+      ],
+      "properties": {
+        "name": { "const": "uts-compute" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "source": {
+          "type": "string",
+          "enum": ["repository-root", "temporary-plugin-root", "installed-plugin-root"]
+        },
+        "server_name": { "const": "uts-compute" },
+        "install_method": {
+          "type": "string",
+          "enum": ["plugin", "mcp-config"]
+        },
+        "manifest_path": { "type": "string", "maxLength": 120 },
+        "mcp_servers_path": { "type": "string", "maxLength": 120 },
+        "mcp_registration": { "type": "string", "maxLength": 200 },
+        "skills_path": {
+          "type": "string",
+          "enum": ["./skills/", ".agents/skills/"]
+        },
+        "mcp_server": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "command", "args"],
+          "properties": {
+            "type": { "const": "stdio" },
+            "command": { "const": "node" },
+            "args": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": { "type": "string", "minLength": 1, "maxLength": 300 }
+            }
+          }
+        },
+        "uses_shared_skills": { "const": true },
+        "uses_shared_mcp_config": { "const": true }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["install_method"],
+            "properties": { "install_method": { "const": "plugin" } }
+          },
+          "then": {
+            "required": ["manifest_path", "mcp_servers_path"],
+            "properties": {
+              "manifest_path": { "const": ".claude-plugin/plugin.json" },
+              "mcp_servers_path": { "const": "./.mcp.json" },
+              "skills_path": { "const": "./skills/" },
+              "mcp_server": {
+                "properties": {
+                  "args": { "items": { "const": "${CLAUDE_PLUGIN_ROOT}/mcp-server/dist/index.js" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["install_method"],
+            "properties": { "install_method": { "const": "mcp-config" } }
+          },
+          "then": {
+            "required": ["mcp_registration"],
+            "properties": { "skills_path": { "const": ".agents/skills/" } }
+          }
+        }
+      ]
+    },
+    "host_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "client_host_observed",
+        "mcp_server_available",
+        "skills_available",
+        "state_scope"
+      ],
+      "properties": {
+        "client_host_observed": { "const": true },
+        "mcp_server_available": { "const": true },
+        "skills_available": { "const": true },
+        "state_scope": {
+          "type": "string",
+          "enum": ["repository-root", "temporary-plugin-root", "installed-plugin-root"]
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skills_discovered",
+        "tools_discovered",
+        "resources_discovered",
+        "profiles_list",
+        "templates_list",
+        "docs_context",
+        "state_migrate_plan",
+        "jobs_plan_dry_run"
+      ],
+      "properties": {
+        "skills_discovered": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "skills"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "skills": {
+              "$ref": "#/$defs/skillArray"
+            }
+          }
+        },
+        "tools_discovered": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "tools"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "tools": {
+              "$ref": "#/$defs/nameArray"
+            }
+          }
+        },
+        "resources_discovered": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "resources"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "resources": {
+              "$ref": "#/$defs/nameArray"
+            }
+          }
+        },
+        "profiles_list": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "profiles_seen", "host_alias_redacted", "secret_refs_redacted"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "profiles_seen": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "host_alias_redacted": {
+              "const": true
+            },
+            "secret_refs_redacted": {
+              "const": true
+            }
+          }
+        },
+        "templates_list": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "template_ids"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "template_ids": {
+              "$ref": "#/$defs/nameArray"
+            }
+          }
+        },
+        "docs_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "method", "reference"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "method": {
+              "type": "string",
+              "enum": ["resource-read", "docs.search", "local-doc"]
+            },
+            "reference": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        },
+        "state_migrate_plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "mode", "writes_planned", "plan_hash"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "mode": {
+              "const": "dry-run"
+            },
+            "writes_planned": {
+              "const": false
+            },
+            "plan_hash": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "jobs_plan_dry_run": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "mode", "run_id", "plan_hash", "script_kind"],
+          "properties": {
+            "ok": {
+              "const": true
+            },
+            "mode": {
+              "const": "dry-run"
+            },
+            "run_id": {
+              "type": "string",
+              "pattern": "^client-smoke-[a-z0-9][a-z0-9-]{1,80}$"
+            },
+            "plan_hash": {
+              "$ref": "#/$defs/sha256"
+            },
+            "script_kind": {
+              "type": "string",
+              "enum": ["pbs", "ihpc-background"]
+            }
+          }
+        }
+      }
+    },
+    "forbidden_operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "no_vpn_probe",
+        "no_ssh_or_remote_shell",
+        "no_pbs_or_ihpc_live_commands",
+        "no_rsync",
+        "no_live_uts_hosts",
+        "no_submission_status_logs_or_cancel",
+        "no_artifact_fetch_cleanup_or_transfer_execute",
+        "no_state_migrate_apply",
+        "no_profiles_local_or_secrets_included",
+        "no_generated_artifacts_committed"
+      ],
+      "properties": {
+        "no_vpn_probe": {
+          "const": true
+        },
+        "no_ssh_or_remote_shell": {
+          "const": true
+        },
+        "no_pbs_or_ihpc_live_commands": {
+          "const": true
+        },
+        "no_rsync": {
+          "const": true
+        },
+        "no_live_uts_hosts": {
+          "const": true
+        },
+        "no_submission_status_logs_or_cancel": {
+          "const": true
+        },
+        "no_artifact_fetch_cleanup_or_transfer_execute": {
+          "const": true
+        },
+        "no_state_migrate_apply": {
+          "const": true
+        },
+        "no_profiles_local_or_secrets_included": {
+          "const": true
+        },
+        "no_generated_artifacts_committed": {
+          "const": true
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "summary"],
+      "properties": {
+        "passed": {
+          "const": true
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{2,120}$"
+    },
+    "nameArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/safeName"
+      }
+    },
+    "skillArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/safeName"
+      }
+    }
+  }
+}

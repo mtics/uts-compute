@@ -1,0 +1,24 @@
+{
+  "run_id": "dry-run-hpc-array",
+  "profile_id": "uts-hpc-account-a",
+  "platform": "uts-hpc",
+  "experiment": {
+    "name": "Array dry-run smoke test",
+    "tags": ["m1", "dry-run", "array"]
+  },
+  "resources": {
+    "queue": "smallq",
+    "ncpus": 1,
+    "memory_gb": 2,
+    "walltime": "00:30:00",
+    "ngpus": 0,
+    "array": {
+      "start": 0,
+      "end": 4,
+      "max_concurrent": 2
+    }
+  },
+  "command": "python sweep.py --index ${PBS_ARRAY_INDEX}",
+  "workdir": "/shared/homes/${USER}/experiments/dry-run-hpc-array",
+  "outputs": ["logs/", "results/"]
+}

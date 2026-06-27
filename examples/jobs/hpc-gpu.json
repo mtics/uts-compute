@@ -1,0 +1,18 @@
+{
+  "run_id": "dry-run-hpc-gpu",
+  "profile_id": "uts-hpc-account-a",
+  "platform": "uts-hpc",
+  "experiment": {
+    "name": "GPU dry-run smoke test",
+    "tags": ["m1", "dry-run", "gpu"]
+  },
+  "resources": {
+    "ncpus": 8,
+    "memory_gb": 32,
+    "walltime": "04:00:00",
+    "ngpus": 1
+  },
+  "command": "python train_gpu.py --device cuda --epochs 1",
+  "workdir": "/shared/homes/${USER}/experiments/dry-run-hpc-gpu",
+  "outputs": ["logs/", "checkpoints/"]
+}

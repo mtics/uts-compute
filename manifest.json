@@ -1,0 +1,40 @@
+{
+  "manifest_version": "0.3",
+  "name": "uts-compute",
+  "version": "0.1.5",
+  "description": "MCP server for UTS HPC and UTS iHPC experiment workflows: job planning, autonomous conformance-gated submission, monitoring, fixed-file transfers, and artifact collection.",
+  "author": {
+    "name": "mtics"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mtics/uts-compute"
+  },
+  "license": "MIT",
+  "server": {
+    "type": "node",
+    "entry_point": "mcp-server/dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/mcp-server/dist/index.js"],
+      "env": {
+        "UTS_COMPUTING_CONFIG": "${user_config.config_path}",
+        "UTS_COMPUTING_APPROVAL_TOKEN": "${user_config.approval_token}"
+      }
+    }
+  },
+  "user_config": {
+    "config_path": {
+      "type": "file",
+      "title": "UTS profiles file",
+      "description": "Absolute path to your YAML profiles file (sets UTS_COMPUTING_CONFIG). Leave empty to use the bundled example profiles. An absolute path is required to use real accounts: ${__dirname} is NOT expanded inside this default field, so the server resolves the bundled example from its own location whenever this is empty.",
+      "required": false
+    },
+    "approval_token": {
+      "type": "string",
+      "title": "Approval confirmation token",
+      "description": "Optional. A token you choose to gate resource-intensive operations (cancel, artifact cleanup, state migration, approval decisions). Leave empty to leave these operations gated/unavailable. The token is used only by this local MCP server and is never sent to external services.",
+      "required": false
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "run_id": "dry-run-ihpc-background",
+  "profile_id": "uts-ihpc-account-a",
+  "platform": "uts-ihpc",
+  "experiment": {
+    "name": "iHPC background dry-run smoke test",
+    "tags": ["m1", "dry-run", "ihpc"]
+  },
+  "resources": {
+    "node_family": "mars",
+    "ncpus": 2,
+    "memory_gb": 8,
+    "walltime": "02:00:00",
+    "ngpus": 0
+  },
+  "command": "python interactive_experiment.py --quick",
+  "workdir": "/data/${USER}/experiments/dry-run-ihpc-background",
+  "outputs": ["logs/", "summary.json"]
+}

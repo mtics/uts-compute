@@ -1,0 +1,14 @@
+{
+  "name": "mtics-plugins",
+  "displayName": "Zev's Plugins",
+  "owner": {
+    "name": "Zev"
+  },
+  "plugins": [
+    {
+      "name": "uts-compute",
+      "source": "./",
+      "description": "Shared UTS HPC and UTS iHPC experiment workflow plugin: client-neutral Skills plus a local stdio MCP server for planning, submitting, monitoring, and collecting experiments."
+    }
+  ]
+}

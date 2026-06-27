@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/profile.schema.json",
+  "title": "UTS Computing Profile",
+  "type": "object",
+  "required": ["profile_id", "platform", "account_label", "login", "defaults"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$"
+    },
+    "platform": {
+      "type": "string",
+      "enum": ["uts-hpc", "uts-ihpc"]
+    },
+    "account_label": {
+      "type": "string"
+    },
+    "login": {
+      "type": "object",
+      "required": ["host_alias", "username_ref", "requires_vpn"],
+      "properties": {
+        "host_alias": { "type": "string" },
+        "username_ref": { "type": "string" },
+        "ssh_agent": { "type": "boolean" },
+        "identity_file_ref": { "type": "string" },
+        "keychain_ref": { "type": "string" },
+        "requires_vpn": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "queue": { "type": "string" },
+        "node_family": { "type": "string" },
+        "node_limits": {
+          "type": "array",
+          "description": "UTS iHPC only: per-pool simultaneous node-occupation caps from the iHPC portal 'My Node Limits' (not SSH-queryable). Each entry is an independent pool (node families sharing one cap), e.g. Research general pool mars/venus/mercury=2 plus a TURINGGROUP turing=2. quotas.capacity advises held-vs-limit headroom per pool.",
+          "items": {
+            "type": "object",
+            "required": ["families", "limit"],
+            "properties": {
+              "families": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "limit": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "owner": {
+          "type": "string",
+          "description": "Attribution label for the campaign ledger (DISCLOSURE, not a credential): which collaborator owns this account. Non-secret — never a real account id."
+        },
+        "allocation": {
+          "type": "string",
+          "description": "Attribution label for the campaign ledger (DISCLOSURE, not a credential): which allocation this account draws on. Non-secret — never a real account id."
+        },
+        "workspace": { "type": "string" },
+        "scratch": { "type": "string" },
+        "project": { "type": "string" },
+        "node_gpu_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16,
+          "description": "UTS iHPC only: GPUs physically present on a node of this profile's node_family. Bounds the campaign placement's fabricated gpu_indices so a large maxConcurrent never plans jobs onto non-existent GPU indices. When unset, campaign.submit uses a conservative default and clamps maxConcurrent to it."
+        },
+        "node_scheduler": {
+          "type": "object",
+          "description": "UTS iHPC only: how the daemonized progressor should be invoked on the node. Optional; absent means 'console' (a clean argv). 'runner' is a deliberate extension point ('uv'/'cron_reboot' are reserved for the daemonized progressor to honor later) and is disclosed as node_scheduler_runner by redactProfile. The old uv_bin/dir node-path sub-options were never consumed post-internalization and were dropped.",
+          "required": ["runner"],
+          "properties": {
+            "runner": { "type": "string", "enum": ["console", "uv", "cron_reboot"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "quota_snapshot": {
+      "type": ["object", "null"],
+      "required": ["observed_at", "source", "freshness"],
+      "properties": {
+        "observed_at": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" },
+        "freshness": {
+          "type": "string",
+          "enum": ["fresh", "stale", "unknown"]
+        },
+        "snapshot_id": { "type": "string" },
+        "raw_evidence_path": { "type": "string" },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "identity": { "type": "object" },
+            "queues": { "type": "object" },
+            "node_families": { "type": "object" },
+            "sessions": { "type": "object" },
+            "storage": { "type": "object" },
+            "running_work": { "type": "object" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

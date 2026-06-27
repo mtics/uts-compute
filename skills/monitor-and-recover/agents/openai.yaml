@@ -1,0 +1,4 @@
+interface:
+  display_name: "UTS Monitor and Recover"
+  short_description: "Diagnose UTS compute run records and live runs when supported"
+  default_prompt: "Diagnose UTS HPC/iHPC run evidence, classify failures, and use live recovery tools only when available and approved."

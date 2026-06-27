@@ -1,0 +1,27 @@
+name: CI
+
+# The repo's first CI. One lane:
+#   js — build + the JS/TS test suite (`npm test`).
+#
+# The vendored ihpc-scheduler/ tree is a reference-only, UNSHIPPED snapshot (T7
+# retired its deploy path; it is excluded from the .mcpb bundle and unreferenced
+# by mcp-server/src runtime), so its pytest suite is no longer a CI gate. The code
+# that actually ships — the internalized progressor
+# (mcp-server/src/ops/scheduler/node/progressor.py) — is exercised by the Node
+# fork-harness tests (mcp-server/tests/ops/scheduler/progressor-*.test.mjs) inside
+# `npm test` on this ubuntu lane, where /proc exists so the /proc-gated pid-reuse
+# tests run (they only skip on macOS dev). `npm run test:python` still runs the
+# vendored pytest locally for provenance/regression, but is intentionally not wired
+# into CI.
+on: [push, pull_request]
+
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm test

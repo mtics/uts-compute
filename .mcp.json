@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "uts-compute": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/mcp-server/dist/index.js"
+      ],
+      "env": {
+        "UTS_COMPUTING_CONFIG": "${CLAUDE_PLUGIN_ROOT}/profiles/profiles.example.yaml",
+        "UTS_COMPUTING_APPROVAL_TOKEN": "${user_config.approval_token}"
+      }
+    }
+  }
+}

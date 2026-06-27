@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/uts-compute/state-migration-apply-record.schema.json",
+  "title": "UTS Computing State Migration Apply Result",
+  "type": "object",
+  "required": [
+    "mode",
+    "generated_at",
+    "target_schema_version",
+    "plan_hash",
+    "writes_applied",
+    "files_backed_up",
+    "files_written",
+    "records_updated",
+    "approval_state_changed",
+    "run_state_changed",
+    "rollback",
+    "warnings"
+  ],
+  "properties": {
+    "mode": { "const": "apply" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "target_schema_version": { "type": "string", "enum": ["0.1.0"] },
+    "plan_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "writes_applied": { "type": "boolean" },
+    "backup_path": { "type": "string" },
+    "files_backed_up": { "type": "array", "items": { "type": "string" } },
+    "files_written": { "type": "array", "items": { "type": "string" } },
+    "records_updated": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path", "action", "changed_fields"],
+        "properties": {
+          "kind": { "type": "string" },
+          "path": { "type": "string" },
+          "action": { "const": "add-schema-version" },
+          "changed_fields": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    },
+    "approval_state_changed": { "const": false },
+    "run_state_changed": { "const": false },
+    "rollback": {
+      "type": "object",
+      "required": ["validation_command"],
+      "properties": {
+        "restore_from": { "type": "string" },
+        "validation_command": { "const": "npm test" }
+      },
+      "additionalProperties": false
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

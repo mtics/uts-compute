@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ihpc-plan.schema.json",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["schema_version", "schema_compat_min", "campaign_id", "queue_id", "lease_owner",
+               "node_id", "profile_id", "limits", "security", "policy", "jobs"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "schema_compat_min": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "campaign_id": { "type": ["string", "null"], "minLength": 1 },
+    "queue_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{6,64}$" },
+    "lease_owner": {
+      "type": "object",
+      "required": ["client", "device_id", "issued_at"],
+      "additionalProperties": false,
+      "properties": {
+        "client": { "enum": ["claude", "codex"] },
+        "device_id": { "type": "string", "minLength": 1 },
+        "issued_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "node_id": { "type": "string", "minLength": 1 },
+    "profile_id": { "type": "string", "minLength": 1 },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot_count", "max_slots_per_gpu", "log_max_bytes"],
+      "properties": {
+        "slot_count": { "type": "integer", "minimum": 1 },
+        "max_slots_per_gpu": { "type": "integer", "minimum": 1 },
+        "log_max_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_roots", "env_key_allowlist"],
+      "properties": {
+        "allowed_roots": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^/" } },
+        "env_key_allowlist": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" } }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["on_job_failure", "failure_breaker", "idle_definition", "idle_exit_seconds", "restart_throttle_seconds"],
+      "properties": {
+        "on_job_failure": { "enum": ["continue", "stop"] },
+        "failure_breaker": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_consecutive_failures", "require_one_success"],
+          "properties": {
+            "max_consecutive_failures": { "type": "integer", "minimum": 1 },
+            "require_one_success": { "type": "boolean" }
+          }
+        },
+        "idle_definition": { "type": "string", "minLength": 1 },
+        "idle_exit_seconds": { "type": "integer", "minimum": 1 },
+        "restart_throttle_seconds": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "jobs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["seq", "run_id", "command_argv", "workdir", "env", "gpu_index", "gpu_count", "timeout_seconds"],
+        "properties": {
+          "seq": { "type": "integer", "minimum": 0 },
+          "run_id": { "type": "string", "minLength": 1 },
+          "command_argv": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "workdir": { "type": "string", "pattern": "^/" },
+          "env": { "type": "object", "additionalProperties": { "type": "string" } },
+          "gpu_index": { "type": "integer", "minimum": 0 },
+          "gpu_count": { "type": "integer", "minimum": 1 },
+          "timeout_seconds": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+# Scheduler queue — per-session experiment list.
+# Copy to queue.yaml, fill in the nodes you have active NoMachine sessions on,
+# and list the experiments you want to run.
+#
+# Global settings (email, thresholds, intervals) live in config.yaml under scheduler:.
+# Queue-local scheduler: values below override config.yaml only for this queue.
+
+# Nodes where you have active NoMachine sessions.
+# GPU count is resolved automatically from hardware.yaml.
+my_nodes:
+  - turing2
+  - hostname: turing1
+    gpus: [1]        # optional: use only GPU 1 on this node
+  - hostname: neptune5
+    block_gpus: [0]  # optional: exclude GPU 0 on this node
+
+scheduler:
+  slots_per_gpu: 1
+  gpu_free_threshold_pct: 40
+  respect_external_gpu_processes: true
+
+experiments:
+  - name: "bert-lr1e-4"
+    command: "conda activate nlp && cd ~/Data/Workspace/myproject && python train.py --lr 1e-4 --epochs 50"
+    requires_gpu: true
+
+  - name: "bert-lr1e-3"
+    command: "conda activate nlp && cd ~/Data/Workspace/myproject && python train.py --lr 1e-3 --epochs 50"
+    requires_gpu: true
+
+  - name: "preprocess-data"
+    command: "conda activate base && cd ~/Data/Workspace/myproject && python preprocess.py"
+    requires_gpu: false
