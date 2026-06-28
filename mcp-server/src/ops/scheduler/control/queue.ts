@@ -7,7 +7,7 @@ import type { RunRecord } from "../../../core/types.js";
 
 // The non-terminal statuses that occupy a concurrency slot or are eligible to start. Every literal here
 // MUST be a member of the live RunRecord["status"] union (core/types.ts:260):
-// "planned"|"submitting"|"submitted"|"running"|"finished"|"failed"|"cancelled"|"unknown" — verified
+// "planned"|"submitting"|"submitted"|"running"|"finished"|"failed"|"cancelled"|"unknown"|"stale" — verified
 // against source (review CP-6). If that union changes, this set and every node→RunRecord mapper break.
 // `satisfies ReadonlySet<RunRecord["status"]>` is a compile-time guard: if RunRecord["status"] ever
 // drops a literal these sets reference (e.g. "submitting" is renamed), the build breaks here rather than

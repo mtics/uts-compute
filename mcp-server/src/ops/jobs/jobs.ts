@@ -312,7 +312,7 @@ export async function trackActiveJobs(
     );
   }
 
-  const terminal = new Set<RunRecord["status"]>(["finished", "failed", "cancelled"]);
+  const terminal = new Set<RunRecord["status"]>(["finished", "failed", "cancelled", "stale"]);
   let skippedTerminal = 0;
   let skippedPlanned = 0;
   const active: RunRecord[] = [];
@@ -867,7 +867,7 @@ export async function cancelJob(
   if (runRecord.platform !== PLATFORM.HPC) {
     throw new Error("jobs.cancel currently supports UTS HPC PBS run records only");
   }
-  if (["finished", "failed", "cancelled"].includes(runRecord.status)) {
+  if (["finished", "failed", "cancelled", "stale"].includes(runRecord.status)) {
     throw new Error(`Run ${runRecord.run_id} is ${runRecord.status}; terminal runs cannot be cancelled`);
   }
   if (profile.platform !== runRecord.platform) {
@@ -1049,7 +1049,8 @@ const DEFINITE_LEDGER_STATUSES = new Set<RunRecord["status"]>([
   "running",
   "finished",
   "failed",
-  "cancelled"
+  "cancelled",
+  "stale"
 ]);
 
 // Status-reconcile transition: apply the terminal-state clamp policy (kept here, NOT folded — only a
@@ -1088,7 +1089,7 @@ function updateRunStatus(
       auditDir
     );
   }
-  const terminal = new Set(["finished", "failed", "cancelled"]);
+  const terminal = new Set(["finished", "failed", "cancelled", "stale"]);
   if (!terminal.has(runRecord.status) || observedStatus === "finished") {
     runRecord.status = observedStatus;
   }
@@ -1426,7 +1427,7 @@ async function cancelIhpcJob(
   if (profile.platform !== PLATFORM.IHPC) {
     throw new Error(`Profile ${profile.profile_id} is for ${profile.platform}, but run record is uts-ihpc`);
   }
-  if (["finished", "failed", "cancelled"].includes(runRecord.status)) {
+  if (["finished", "failed", "cancelled", "stale"].includes(runRecord.status)) {
     throw new Error(`Run ${runRecord.run_id} is ${runRecord.status}; terminal runs cannot be cancelled`);
   }
   if (!runRecord.plan_hash || !runRecord.quota_snapshot_id) {

@@ -1278,7 +1278,7 @@ function requireRunPlanHash(runRecord: RunRecord): string {
 }
 
 function assertTerminalRunForCleanup(runRecord: RunRecord): void {
-  if (runRecord.status !== "finished" && runRecord.status !== "failed" && runRecord.status !== "cancelled") {
+  if (runRecord.status !== "finished" && runRecord.status !== "failed" && runRecord.status !== "cancelled" && runRecord.status !== "stale") {
     throw new Error(`artifacts.cleanup.execute requires a terminal run status, not ${runRecord.status}`);
   }
 }

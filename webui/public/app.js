@@ -33,7 +33,7 @@ const STATUS = {
   cancelled: { color: "orange", dot: "" },
   unknown: { color: "secondary", dot: "" }
 };
-const TERMINAL = new Set(["finished", "failed", "cancelled"]);
+const TERMINAL = new Set(["finished", "failed", "cancelled", "stale"]);
 const STATUS_TOKEN = {
   planned: "--ops-status-planned",
   submitting: "--ops-status-submitting",
@@ -2302,7 +2302,7 @@ function runsChartsUseful(summary, runs) {
   const statusBuckets = Object.values(statusCounts).filter((count) => Number(count) > 0).length;
   const projectBuckets = (summary.by_project || []).filter((project) => project.project && project.project !== "unassigned" && Number(project.core_hours || project.runs || 0) > 0).length;
   const hasUsage = runs.some((run) => run.usage) || Number(summary.total_core_hours || 0) > 0 || Number(summary.total_gpu_hours || 0) > 0;
-  const hasTerminal = runs.some((run) => ["finished", "failed", "cancelled"].includes(run.status));
+  const hasTerminal = runs.some((run) => ["finished", "failed", "cancelled", "stale"].includes(run.status));
   return hasUsage || hasTerminal || statusBuckets > 2 || projectBuckets > 1;
 }
 function runsHeaderSummary(data, runs) {

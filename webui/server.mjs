@@ -202,7 +202,7 @@ async function route(req, res, cfg) {
 
 // ---- read helpers (all over already-redacted local JSON) ----
 
-const TERMINAL_STATUSES = new Set(["finished", "failed", "cancelled", "canceled"]);
+const TERMINAL_STATUSES = new Set(["finished", "failed", "cancelled", "canceled", "stale"]);
 
 // L1 iHPC node load. The set of {profileId, node} an ACTIVE iHPC run currently occupies (deduped). Node
 // comes from the P2-a observed block or submission; terminal runs are skipped (we only probe live work).
