@@ -69,7 +69,7 @@ One file corresponds to one client-installed smoke run. The release gate require
 - the Claude Code file uses `install_method: "plugin"` and references `.claude-plugin/plugin.json`, `./.mcp.json`, `skills_path: "./skills/"`, and the `${CLAUDE_PLUGIN_ROOT}` launch arg;
 - the Codex file uses `install_method: "mcp-config"`, records `mcp_registration` (e.g. `codex mcp add …`), `skills_path: ".agents/skills/"`, and an absolute `node …/mcp-server/dist/index.js` launch arg (no plugin-root variable).
 
-Both confirm the same shared MCP server and the same 14 Skills.
+Both confirm the same shared MCP server and the same 15 Skills.
 
 The evidence is intentionally a structured summary, not a transcript. It records booleans, counts, ids, dry-run modes, and hashes only.
 

@@ -16,7 +16,7 @@ This package distributes on open standards (see [adr/0005-standards-first-distri
 /plugin install uts-compute@mtics-plugins
 ```
 
-Verify with `/mcp` (server connected) and `/help` (the 14 Skills). See [plugin-setup.md](plugin-setup.md).
+Verify with `/mcp` (server connected) and `/help` (the 15 Skills). See [plugin-setup.md](plugin-setup.md).
 
 ## Codex (and other standard MCP clients)
 
