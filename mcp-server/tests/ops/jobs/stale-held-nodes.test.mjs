@@ -86,6 +86,22 @@ test("reconcileStaleHeldNodes: fetchHeldNodes is called ONCE per distinct profil
   assert.deepEqual(calls, ["uts-ihpc-account-a"]);
 });
 
+test("reconcileStaleHeldNodes: ok=true with EMPTY held set -> any active iHPC run is marked stale (holds-nothing boundary)", async () => {
+  const auditDir = tempRuntimeDir("stale-empty-held");
+  await seedIhpcRun(auditDir, { runId: "empty-held-venus6", node: "venus6", pid: 5001 });
+
+  const records = [readRunRecord("empty-held-venus6", auditDir)];
+  // held is empty — the account holds no nodes at all
+  const fetchHeldNodes = stubHeldNodes({ "uts-ihpc-account-a": { ok: true, held: [] } });
+
+  await reconcileStaleHeldNodes(records, { fetchHeldNodes, auditDir, now: NOW });
+
+  const after = readRunRecord("empty-held-venus6", auditDir);
+  assert.equal(after.status, "stale", "ok+empty-held-set: run on any node must become stale");
+  assert.ok(after.stale_reason, "stale_reason is set");
+  assert.match(after.stale_reason, /venus6/, "stale_reason mentions the node");
+});
+
 test("trackActiveJobs (integration): a staled run is excluded from the active/tracked output and persisted as stale", async () => {
   const auditDir = tempRuntimeDir("stale-track-integration");
   await seedIhpcRun(auditDir, { runId: "trk-stale-venus6", node: "venus6", pid: 4001 });

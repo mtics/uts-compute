@@ -31,6 +31,7 @@ const STATUS = {
   finished: { color: "green", dot: "" },
   failed: { color: "red", dot: "" },
   cancelled: { color: "orange", dot: "" },
+  stale: { color: "orange", dot: "" },
   unknown: { color: "secondary", dot: "" }
 };
 const TERMINAL = new Set(["finished", "failed", "cancelled", "stale"]);
@@ -42,6 +43,7 @@ const STATUS_TOKEN = {
   finished: "--ops-status-finished",
   failed: "--ops-status-failed",
   cancelled: "--ops-status-cancelled",
+  stale: "--ops-status-cancelled",
   unknown: "--ops-status-unknown"
 };
 const STATUS_COLOR_FALLBACK = {
@@ -66,6 +68,7 @@ const STATUS_ICON = {
   finished: "ti-circle-check",
   failed: "ti-alert-triangle",
   cancelled: "ti-ban",
+  stale: "ti-link-off",
   unknown: "ti-help-circle"
 };
 const countBy = (arr, key) => arr.reduce((m, x) => ((m[x[key]] = (m[x[key]] || 0) + 1), m), {});
@@ -120,9 +123,10 @@ const STATUS_SORT_ORDER = {
   submitted: 4,
   planned: 5,
   cancelled: 6,
-  finished: 7
+  stale: 7,
+  finished: 8
 };
-const PROJECT_STATUS_ORDER = ["failed", "unknown", "running", "submitting", "submitted", "planned", "cancelled", "finished"];
+const PROJECT_STATUS_ORDER = ["failed", "unknown", "running", "submitting", "submitted", "planned", "cancelled", "stale", "finished"];
 const PROJECT_STATUS_LABELS = {
   failed: "failed",
   unknown: "unknown",
@@ -3582,7 +3586,7 @@ function lifecycleEventTone(event) {
   return { severity: "neutral", label: "event", icon: "ti-point" };
 }
 function lifecycleTerminalStep(status) {
-  if (status === "failed" || status === "cancelled" || status === "unknown") return status;
+  if (status === "failed" || status === "cancelled" || status === "stale" || status === "unknown") return status;
   return "finished";
 }
 function lifecycleTab(run) {
@@ -3617,7 +3621,7 @@ function lifecycleTab(run) {
     <ul class="timeline">${timeline || `<li>${emptyState("No events", "", "history-empty")}</li>`}</ul>`;
 }
 function stageIndex(status) {
-  if (status === "finished" || status === "failed" || status === "cancelled") return 3;
+  if (status === "finished" || status === "failed" || status === "cancelled" || status === "stale") return 3;
   if (status === "running") return 2;
   if (status === "submitted" || status === "submitting") return 1;
   return 0;

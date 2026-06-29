@@ -27,3 +27,35 @@ test("profile_errors renders with 'couldn\\'t reach login host' or similar probe
   // The error text must give the user something actionable about why cnode mynodes failed
   assert.match(appSource, /couldn.t reach login host|probe.error|probe_error/i);
 });
+
+// ── stale display assertions ──────────────────────────────────────────────────
+// A `stale` run must NOT fall through to the grey "unknown" badge/icon.
+// These source-text assertions verify the display maps each contain a `stale:` entry.
+
+test("STATUS map has a `stale` entry", () => {
+  assert.match(appSource, /\bstale\s*:\s*\{[^}]*color/);
+});
+
+test("STATUS_TOKEN map has a `stale` entry", () => {
+  assert.match(appSource, /STATUS_TOKEN\s*=\s*\{[^}]*stale\s*:/s);
+});
+
+test("STATUS_ICON map has a `stale` entry", () => {
+  assert.match(appSource, /STATUS_ICON\s*=\s*\{[^}]*stale\s*:/s);
+});
+
+test("STATUS_SORT_ORDER map has a `stale` entry", () => {
+  assert.match(appSource, /STATUS_SORT_ORDER\s*=\s*\{[^}]*stale\s*:/s);
+});
+
+test("PROJECT_STATUS_ORDER includes `stale`", () => {
+  assert.match(appSource, /PROJECT_STATUS_ORDER\s*=\s*\[[^\]]*"stale"/s);
+});
+
+test("lifecycleTerminalStep treats `stale` as a named terminal step (not falling through to `finished`)", () => {
+  assert.match(appSource, /lifecycleTerminalStep[^}]*stale/s);
+});
+
+test("stageIndex treats `stale` as a terminal stage (index 3)", () => {
+  assert.match(appSource, /stageIndex[^}]*stale/s);
+});
