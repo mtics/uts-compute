@@ -5225,8 +5225,11 @@ function nodeCard(n, idleSet) {
   const body = n.status === "ok" && n.gpus?.length
     ? n.gpus.map(gpuBar).join("")
     : `<div class="node-unverifiable-note"><i class="ti ti-alert-triangle me-1"></i>unreadable — ${esc(n.reason || "node could not be probed")}</div>`;
+  const heldNoRunChip = n.held_no_run
+    ? `<span class="runs-header-chip ms-1" title="This node is held by your account but no plugin run record references it — work started outside the plugin."><i class="ti ti-plug-x me-1"></i>held · no plugin run</span>`
+    : "";
   return `<div class="node-card ${cls}">
-    <div class="node-card-head"><strong>${esc(n.node)}</strong><span class="profile">${esc(n.profile_id)}</span></div>
+    <div class="node-card-head"><strong>${esc(n.node)}</strong><span class="profile">${esc(n.profile_id)}</span>${heldNoRunChip}</div>
     ${idle ? `<div class="node-unverifiable-note"><i class="ti ti-bolt-off me-1"></i>held but idle (all GPUs ≤5%)</div>` : ""}
     ${body}
   </div>`;
@@ -5252,10 +5255,15 @@ function nodeLoadBody(data) {
     ${b.unverifiable_count ? `<span class="text-secondary"><i class="ti ti-alert-triangle me-1"></i>${esc(b.unverifiable_count)} unreadable</span>` : ""}
     ${fresh ? `<span class="text-secondary">${esc(fresh)}</span>` : ""}
   </div>`;
+  const profileErrors = (data.profile_errors || []).length
+    ? `<div class="node-load-profile-errors">${(data.profile_errors).map((e) =>
+        `<div class="text-secondary small"><i class="ti ti-alert-circle me-1"></i><code>${esc(e.profile_id)}</code>: couldn't reach login host — ${esc(e.probe_error)}</div>`
+      ).join("")}</div>`
+    : "";
   const grid = (data.nodes || []).length
     ? `<div class="node-load-grid">${data.nodes.map((n) => nodeCard(n, idleSet)).join("")}</div>`
     : emptyState("No active iHPC nodes", "No active iHPC run is currently holding a node to probe.", "history-empty");
-  return `<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><div class="text-secondary small">Live GPU utilization for the nodes your active iHPC runs occupy — see whether load is balanced and whether a node is held but idle.</div>${refreshBtn}</div>${balance}${grid}`;
+  return `<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><div class="text-secondary small">Live GPU utilization for the nodes your active iHPC runs occupy — see whether load is balanced and whether a node is held but idle.</div>${refreshBtn}</div>${balance}${profileErrors}${grid}`;
 }
 // Node load is rendered as a section of the Runs view (see renderRunsList), so the refresh button
 // re-renders whatever view embeds it. `reRender` is the embedding view's render function.

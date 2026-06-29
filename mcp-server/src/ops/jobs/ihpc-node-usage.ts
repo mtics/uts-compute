@@ -118,6 +118,32 @@ export function parseNodeUsageReport(value: unknown): NodeUsageReport | null {
   return { ok: record.ok === true, gpus, processes, errors };
 }
 
+// stripSshNoise removes OpenSSH post-quantum key-exchange warnings and the iHPC welcome banner from
+// stderr so the stored `reason` for a non-zero probe exit is the FIRST USEFUL LINE, not wall-of-text
+// noise. Lines stripped: the PQ-KEX warning trio (post-quantum / store-now / openssh.com/pq.html),
+// and the iHPC banner block (* ... * bordered lines, including "Welcome to the iHPC" body lines).
+// If stripping leaves nothing, falls back to a generic "probe failed (no diagnostic output)" message.
+export function stripSshNoise(text: string): string {
+  const lines = text.split(/\r?\n/);
+  const filtered = lines.filter((line) => {
+    // PQ-KEX warning lines (all start with "** " in OpenSSH output)
+    if (/post-quantum key exchange/i.test(line)) return false;
+    if (/store now, decrypt later/i.test(line)) return false;
+    if (/server may need to be upgraded/i.test(line)) return false;
+    if (/openssh\.com\/pq/i.test(line)) return false;
+    // iHPC banner: border lines (all-star or near-all-star) and banner body lines (* ... *)
+    if (/^\*{10,}$/.test(line.trim())) return false;
+    if (/^\*\s+.*\s+\*$/.test(line.trim())) return false;
+    return true;
+  });
+  // Collapse consecutive blank lines, then trim leading/trailing whitespace
+  const collapsed = filtered
+    .join("\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+  return collapsed || "probe failed (no diagnostic output)";
+}
+
 function unverifiable(node: string, reason: string): NodeUsageResult {
   return { node, status: "node-unverifiable", gpus: [], processes: [], probed_at: new Date().toISOString(), reason };
 }
@@ -165,7 +191,8 @@ export async function probeNodeUsage(
     return unverifiable(node, "the probe timed out");
   }
   if (result.exitCode !== 0) {
-    const reason = (result.stderr || `exit ${String(result.exitCode)}`).trim().split(/\r?\n/)[0];
+    const raw = result.stderr || `exit ${String(result.exitCode)}`;
+    const reason = stripSshNoise(raw).split(/\r?\n/)[0];
     return unverifiable(node, `the probe exited non-zero (${reason})`);
   }
 
