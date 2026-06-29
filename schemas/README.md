@@ -10,7 +10,7 @@ Schemas define the contracts enforced by the MCP server before remote actions.
 - `docs-cache-record.schema.json`: fixed-source official UTS documentation cache record created by `docs.refresh`.
 - `job-spec.schema.json`: planned compute work before rendering or submission.
 - `planned-job.schema.json`: persisted dry-run job plan artifact consumed by approved submission, including optional retry approval operation and lineage metadata.
-- `run-record.schema.json`: local audit record for planned, submitted, running, finished, failed, or cancelled work, including optional retry lineage metadata and an optional reproducibility block (git sha/branch/dirty plus the redacted command).
+- `run-record.schema.json`: local audit record for planned, submitted, running, finished, failed, cancelled, or stale work (`stale` = a non-terminal iHPC run whose node is no longer in the account's live held set, outcome unknown), including optional retry lineage metadata and an optional reproducibility block (git sha/branch/dirty plus the redacted command).
 - `transfer-plan.schema.json`: local transfer plan input, optionally including fixed files and total byte budget for approved execution.
 - `planned-transfer.schema.json`: persisted dry-run transfer plan artifact consumed by approved transfer execution.
 - `transfer-execution-record.schema.json`: local evidence record created by approved `transfers.execute`, including optional bounded SHA-256 transfer checksum evidence and policy for new records while still accepting older size-only records.

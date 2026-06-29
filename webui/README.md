@@ -17,12 +17,15 @@ npm run webui:status # check whether the fixed WebUI port is still occupied
 Then open <http://127.0.0.1:4173>. Pages:
 
 - **Runs** — an operational dashboard: an execution overview (active / queued / platforms / accounts /
-  nodes / evidence), a Projects glance, a live iHPC **Node load** section (per-node GPU utilization for
-  the nodes your active runs occupy, with an on-demand live probe; folded in here, not a standalone
+  nodes / evidence), a Projects glance, a live iHPC **Node load** section (per-node GPU utilization,
+  derived from the account's **live held nodes** via `cnode mynodes` on the login host — new nodes
+  appear automatically, departed nodes vanish; held nodes with no plugin run record are tagged
+  "held · no plugin run"; a non-terminal iHPC run whose node is no longer held is auto-retired to
+  `stale` on reconcile/refresh, only when the held-node probe succeeds; folded in here, not a standalone
   page) on one row with a **Runs by status** donut, then **Core-hours by project** on its own row. The
   detailed, filterable/sortable run table now lives in **Explore**. A **Live probe** control re-polls
-  active runs' status + usage over SSH (with an opt-in **Auto-probe** interval), kept distinct from the
-  local **Auto-refresh** reload.
+  active runs' status + usage over SSH and re-discovers the live held-node set (with an opt-in
+  **Auto-probe** interval), kept distinct from the local **Auto-refresh** reload.
 - **Run detail** — Overview / Plan & Resources / Lifecycle / Logs / Artifacts. The Overview starts
   with action readiness, evidence completeness, and resource evidence cards before the metric summary;
   **Submit** (planned runs), **Clone/Rerun** (terminal runs), and **Abort** (active runs) remain

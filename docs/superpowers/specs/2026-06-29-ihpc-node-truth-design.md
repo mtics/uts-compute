@@ -1,7 +1,7 @@
 # iHPC live node truth — held-node discovery + stale reconciliation
 
 - **Date:** 2026-06-29
-- **Status:** approved design, pending implementation plan
+- **Status:** implemented (v0.1.6) — the `ok:false` panel behaviour (when `fetchHeldNodes` fails) shows a per-profile probe error and does **not** fall back to the last run-record snapshot; this is deliberate, to avoid re-surfacing a stale / already-departed node list.
 - **Supersedes/extends:** [`2026-06-27-webui-runs-semantics-and-ihpc-node-load-design.md`](2026-06-27-webui-runs-semantics-and-ihpc-node-load-design.md) (the original run-record-derived Node-load panel)
 
 ## Problem

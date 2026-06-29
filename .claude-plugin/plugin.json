@@ -1,6 +1,6 @@
 {
   "name": "uts-compute",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Shared Claude Code package for UTS HPC and UTS iHPC experiment workflows using Skills and a local MCP server.",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json"

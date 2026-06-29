@@ -824,7 +824,7 @@ status text alone:
 
 | Field | Meaning | Examples |
 |---|---|---|
-| `run_status` | Lifecycle state | `planned`, `submitted`, `running`, `finished`, `failed` |
+| `run_status` | Lifecycle state | `planned`, `submitted`, `running`, `finished`, `failed`, `cancelled`, `unknown`, `stale` (iHPC: node no longer held, outcome unknown) |
 | `attention_reason` | Why the user may need to inspect it | `snapshot_stale`, `token_confirmation_required`, `blocked_nonconformant`, `missing_remote_id`, `dirty_git`, `resource_over_requested`, `logs_missing` |
 | `severity` | Operational attention level | `none`, `low`, `medium`, `high` |
 | `reason_source` | Evidence source explaining the reason | `last_event`, `diagnose`, `quota_snapshot`, `conformance`, `authorization`, `missing_evidence`, `usage`, `git` |
