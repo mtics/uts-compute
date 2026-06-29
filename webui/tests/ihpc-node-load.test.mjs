@@ -35,6 +35,18 @@ function craftedExecutor(downNodes = new Set()) {
   };
 }
 
+// A stub fetchHeldNodes: returns a deterministic held-node set per profile.
+// Used by tests that must control which nodes are "currently held" without real SSH.
+function makeFetchHeldNodesStub(heldByProfile) {
+  return async (profileId, _opts) => {
+    const nodes = heldByProfile[profileId] ?? [];
+    return { ok: true, heldNodes: new Set(nodes), observedAt: new Date().toISOString() };
+  };
+}
+
+// A no-op reconcileStaleHeldNodes stub: prevents the production function from attempting real SSH.
+const noopReconcile = async () => ({ staled: [] });
+
 function seedIhpc(auditDir, runId, node, status = "running") {
   const rec = {
     run_id: runId, profile_id: "uts-ihpc-account-a", platform: "uts-ihpc",
@@ -78,10 +90,15 @@ test("refresh probes only ACTIVE iHPC nodes, persists an ok snapshot, and serves
   seedIhpc(auditDir, "run-terminal", "mars8", "finished"); // terminal => not probed
   seedHpc(auditDir, "run-hpc"); // wrong platform => not probed
 
-  await withServer({ auditDir, nodeUsageDir, configPath: EXAMPLE_CONFIG, nodeUsageExecutor: craftedExecutor() }, async (base) => {
+  // Inject fetchHeldNodes stub: the live held-node set for uts-ihpc-account-a is mars6+mars7 (same
+  // as the run records say, but now sourced from cnode mynodes rather than frozen submission.node).
+  // mars8 is NOT in the held set (already released after finishing).
+  const fetchHeldNodes = makeFetchHeldNodesStub({ "uts-ihpc-account-a": ["mars6", "mars7"] });
+
+  await withServer({ auditDir, nodeUsageDir, configPath: EXAMPLE_CONFIG, nodeUsageExecutor: craftedExecutor(), fetchHeldNodes, reconcileStaleHeldNodes: noopReconcile }, async (base) => {
     const refreshed = await postRefresh(base);
     assert.equal(refreshed.ok, true);
-    assert.equal(refreshed.node_count, 2, "only the two active iHPC nodes are probed");
+    assert.equal(refreshed.node_count, 2, "only the two live held iHPC nodes are probed");
     const probedNodes = refreshed.nodes.map((n) => n.node).sort();
     assert.deepEqual(probedNodes, ["mars6", "mars7"]);
     for (const n of refreshed.nodes) {
@@ -109,7 +126,10 @@ test("an unreadable node is reported node-unverifiable (empty gpus, never counte
   const nodeUsageDir = tmp("node-usage");
   seedIhpc(auditDir, "run-saturn9", "saturn9");
 
-  await withServer({ auditDir, nodeUsageDir, configPath: EXAMPLE_CONFIG, nodeUsageExecutor: craftedExecutor(new Set(["saturn9"])) }, async (base) => {
+  // Inject fetchHeldNodes stub: saturn9 is currently held by uts-ihpc-account-a
+  const fetchHeldNodes = makeFetchHeldNodesStub({ "uts-ihpc-account-a": ["saturn9"] });
+
+  await withServer({ auditDir, nodeUsageDir, configPath: EXAMPLE_CONFIG, nodeUsageExecutor: craftedExecutor(new Set(["saturn9"])), fetchHeldNodes, reconcileStaleHeldNodes: noopReconcile }, async (base) => {
     const refreshed = await postRefresh(base);
     assert.equal(refreshed.node_count, 1);
     const node = refreshed.nodes[0];
