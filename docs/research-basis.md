@@ -134,6 +134,23 @@ iHPC references:
 - Data directory: https://ihpc.research.uts.edu.au/help/documentation-rhel-810/file-systems/data-directory/
 - Scratch directory: https://ihpc.research.uts.edu.au/help/documentation-rhel-810/file-systems/scratch-directory/
 
+## External references / prior art (UTS-eResearch)
+
+UTS eResearch publishes the institution's own HPC tooling at [github.com/orgs/UTS-eResearch](https://github.com/orgs/UTS-eResearch/repositories). These are an authoritative oracle for verifying platform **facts** — queue topology, job/node fields, utilisation definitions, PBS submission conventions.
+
+> **Licence boundary (hard rule).** This package ships **MIT**; these repos do not. We may **learn facts, cite them as sources, and clean-room re-implement ideas**. We must **never copy, translate, or closely paraphrase their code** into this repo — facts/data (queue names, numeric limits, PBS command syntax) and methods are not copyrightable, but the code expression is, and their copyleft would force the result under their licence and falsify our MIT claim. **Prefer primary public sources** (live `qstat`, PBS Pro docs, the UTS HPC/iHPC docs above) over their code when a fact is available there, and **check each repo's `LICENSE` individually** — the org mixes licences; never assume.
+
+HPC-relevant repos (SPDX licence verified via the GitHub API, 2026-06-30):
+
+| Repo | Licence | What it is | Use for us (facts only) |
+|---|---|---|---|
+| [`pbsweb`](https://github.com/UTS-eResearch/pbsweb) | GPL-3.0 | Web view of nodes/queues/jobs on the PBS Pro cluster | queue topology, job/node states, `qstat` fields → quotas / conformance / jobs / node-load / webui |
+| [`hpc_utilisation`](https://github.com/UTS-eResearch/hpc_utilisation) | GPL-3.0 | Checks PBS job utilisation | utilisation / core-hours / GPU-hours definitions → jobs.usage / accounting / webui |
+| [`hpc_examples`](https://github.com/UTS-eResearch/hpc_examples) | **none (no `LICENSE` = all rights reserved)** | Example PBS job-submission scripts | PBS submit conventions incl. GPU `-l select=…:ngpus=N` → templates / submit. **No grant at all → copying is _more_ restricted than GPL; facts only.** |
+| [`email-interrogator`](https://github.com/UTS-eResearch/email-interrogator) | GPL-3.0 | IMAP-box report generator | context for the iHPC node-usage emails `access.confirm_usage` answers |
+
+(`hpc_undeny` is a denyhosts admin tool — not relevant. The org's many non-HPC repos — redbox / ro-crate / ocfl / datacrate / describo / oni — are out of scope.)
+
 ## Unknowns To Resolve With Live Accounts
 
 The user has two accounts on each platform. Public documentation does not determine the real per-account quotas, queue ACLs, project memberships, or node-group access.
