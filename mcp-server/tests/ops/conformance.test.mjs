@@ -31,6 +31,22 @@ const disabledq = { name: "disabledq", enabled: true, started: false, resources_
 
 const base = { username: "u00000001", groups: [], runningInQueue: 0, queuedInQueue: 0 };
 
+test("a PBS routing queue (queue_type Route) is refused — its own limits are not the ones that apply", () => {
+  const routeq = { name: "defaultq", queue_type: "Route", enabled: true, started: true, resources_max: {} };
+  const r = checkPbsConformance({
+    ...base, queue: "defaultq", ncpus: 4, memory_gb: 8, walltime: "01:00:00", queueLimit: routeq
+  });
+  assert.equal(r.conforms, false);
+  assert.ok(r.violations.some((v) => v.code === "routing-queue"));
+});
+
+test("an execution queue is not flagged as a routing queue", () => {
+  const r = checkPbsConformance({
+    ...base, queue: "smallq", ncpus: 4, memory_gb: 32, walltime: "24:00:00", queueLimit: smallq
+  });
+  assert.ok(!r.violations.some((v) => v.code === "routing-queue"));
+});
+
 test("a job within smallq limits conforms", () => {
   const r = checkPbsConformance({
     ...base, queue: "smallq", ncpus: 4, memory_gb: 32, walltime: "24:00:00", queueLimit: smallq
