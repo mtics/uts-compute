@@ -123,6 +123,31 @@ test("jobs.status queries qstat -f for the run record job id and updates local s
   assert.equal(runRecord.events.at(-1).artifact_path, result.status.evidence_path);
 });
 
+test("jobs.status maps the previously-unmapped PBS states M (moved), U (user-suspend), X (finished)", async () => {
+  // These valid PBS Pro states fell through to 'unknown' before. M = job moved/transiting between
+  // queues (in-flight, like T); U = suspended by workstation user activity (like S); X = finished/
+  // expired historical record (like F).
+  const cases = [
+    { state: "M", expected: "submitted" },
+    { state: "U", expected: "running" },
+    { state: "X", expected: "finished" }
+  ];
+  for (const { state, expected } of cases) {
+    const fixture = await submittedHpcRun(`ops-state-${state.toLowerCase()}`);
+    const result = await getJobStatus(
+      { runId: fixture.plan.run_id },
+      {
+        auditDir: fixture.auditDir,
+        configPath: fixture.configPath,
+        now: new Date("2026-06-15T00:05:00.000Z"),
+        executor: async () => ({ exitCode: 0, stdout: `Job Id: 4321.hpc\n    job_state = ${state}\n`, stderr: "" })
+      }
+    );
+    assert.equal(result.status.status, expected, `PBS state ${state} should map to ${expected}`);
+    assert.equal(result.status.scheduler_state, state);
+  }
+});
+
 test("jobs.status bumps the run-record rev by exactly 1 per poll (no stray double-write)", async () => {
   const fixture = await submittedHpcRun("ops-status-rev");
   const recordPath = path.join(fixture.auditDir, `${fixture.plan.run_id}.json`);
