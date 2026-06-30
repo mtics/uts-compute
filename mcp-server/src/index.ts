@@ -711,7 +711,7 @@ const TOOLS: ToolRegistrar[] = [
       inputSchema: strictInput({
         profileId: PROFILE_ID.optional(),
         platform: PLATFORM_ENUM.optional(),
-        status: z.enum(["planned", "submitted", "running", "finished", "failed", "cancelled", "unknown"]).optional(),
+        status: z.enum(["planned", "submitted", "running", "finished", "failed", "cancelled", "unknown", "stale"]).optional(),
         project: z.string().optional(),
         since: z
           .string()

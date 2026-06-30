@@ -18,13 +18,14 @@ import { listProfiles } from "../mcp-server/dist/core/config.js";
 import { quotaCapacity } from "../mcp-server/dist/ops/quotas/capacity.js";
 import { planRetryJob } from "../mcp-server/dist/ops/jobs/retry.js";
 import { submitJob } from "../mcp-server/dist/ops/jobs/submit.js";
-import { cancelJob, trackActiveJobs } from "../mcp-server/dist/ops/jobs/jobs.js";
+import { cancelJob, trackActiveJobs, reconcileStaleHeldNodes as _reconcileStaleHeldNodes } from "../mcp-server/dist/ops/jobs/jobs.js";
 import { requestApproval, decideApproval, approvalStatus } from "../mcp-server/dist/ops/approvals/approvals.js";
 import { SAFE_RUN_ID_PATTERN } from "../mcp-server/dist/core/ids.js";
 import { assertQuotaSnapshot } from "../mcp-server/dist/core/validation.js";
 import { round2 } from "../mcp-server/dist/lib/shared.js";
 import { runtimeRootDir } from "../mcp-server/dist/core/paths.js";
 import { runIhpcNodeUsage } from "../mcp-server/dist/ops/jobs/ihpc-node-usage.js";
+import { fetchHeldNodes as _fetchHeldNodes } from "../mcp-server/dist/ops/quotas/held-nodes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -62,7 +63,11 @@ export function createWebuiServer(options = {}) {
     nodeUsageDir: options.nodeUsageDir ?? path.join(runtimeDir, "node-usage"),
     nodeUsageExecutor: options.nodeUsageExecutor,
     // Live status reconcile (jobs.track) — injectable executor so the refresh endpoint is unit-testable.
-    jobTrackExecutor: options.jobTrackExecutor
+    jobTrackExecutor: options.jobTrackExecutor,
+    // Live held-node discovery — injectable for tests to stub cnode mynodes without real SSH.
+    fetchHeldNodes: options.fetchHeldNodes ?? _fetchHeldNodes,
+    // Stale-held-nodes reconcile — injectable for tests to spy without real SSH.
+    reconcileStaleHeldNodes: options.reconcileStaleHeldNodes ?? _reconcileStaleHeldNodes
   };
 
   return http.createServer(async (req, res) => {
@@ -202,44 +207,112 @@ async function route(req, res, cfg) {
 
 // ---- read helpers (all over already-redacted local JSON) ----
 
-const TERMINAL_STATUSES = new Set(["finished", "failed", "cancelled", "canceled"]);
+const TERMINAL_STATUSES = new Set(["finished", "failed", "cancelled", "canceled", "stale"]);
 
-// L1 iHPC node load. The set of {profileId, node} an ACTIVE iHPC run currently occupies (deduped). Node
-// comes from the P2-a observed block or submission; terminal runs are skipped (we only probe live work).
-function relevantIhpcNodes(cfg) {
-  const seen = new Set();
-  const out = [];
+// L1 iHPC node load — LIVE held-node discovery.
+// Combines profile-based discovery (all iHPC profiles from config) with active-run profile_ids so
+// no account is missed. For each unique iHPC profile, calls fetchHeldNodes (cnode mynodes) once,
+// then cross-references with the non-terminal run records to tag held_no_run.
+// Returns { targets: [{profile_id, node, held_no_run}], profileErrors: [{profile_id, probe_error}] }.
+async function liveHeldNodeTargets(cfg) {
+  // 1. Collect iHPC profile IDs from non-terminal run records
+  const activeRunsByNode = new Map(); // "profileId\tnode" => true (has active run)
+  const profileIdsFromRuns = new Set();
   let files;
-  try { files = fs.readdirSync(cfg.auditDir); } catch { return out; }
+  try { files = fs.readdirSync(cfg.auditDir); } catch { files = []; }
   for (const file of files) {
     if (!file.endsWith(".json")) continue;
     let record;
     try { record = JSON.parse(fs.readFileSync(path.join(cfg.auditDir, file), "utf8")); } catch { continue; }
     if (record?.platform !== "uts-ihpc" || TERMINAL_STATUSES.has(record.status)) continue;
-    const node = record.observed?.node || record.submission?.node;
     const profileId = record.profile_id;
-    if (!node || !profileId) continue;
-    const key = `${profileId}\t${node}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ profileId, node });
+    const node = record.observed?.node || record.submission?.node;
+    if (profileId) profileIdsFromRuns.add(profileId);
+    if (profileId && node) activeRunsByNode.set(`${profileId}\t${node}`, true);
   }
-  return out;
+
+  // 2. Union with all iHPC profiles from config (so brand-new accounts surface even with no runs)
+  const profileIdsFromConfig = new Set();
+  try {
+    for (const p of listProfiles(cfg.configPath)) {
+      if (p.platform === "uts-ihpc") profileIdsFromConfig.add(p.profile_id);
+    }
+  } catch { /* config missing or unreadable — fall back to run records only */ }
+
+  const allProfileIds = new Set([...profileIdsFromRuns, ...profileIdsFromConfig]);
+
+  // 3. Fetch held nodes for each profile ONCE (memoized implicitly by deduped Set)
+  const targets = [];
+  const profileErrors = [];
+  for (const profileId of allProfileIds) {
+    const result = await cfg.fetchHeldNodes(profileId, { configPath: cfg.configPath });
+    if (!result.ok) {
+      profileErrors.push({ profile_id: profileId, probe_error: result.reason ?? "probe failed" });
+      continue;
+    }
+    for (const node of result.heldNodes) {
+      const held_no_run = !activeRunsByNode.has(`${profileId}\t${node}`);
+      targets.push({ profile_id: profileId, node, held_no_run });
+    }
+  }
+
+  return { targets, profileErrors };
 }
 
-// Probe every relevant node via the committed ihpc.node.usage probe (fail-closed) and persist a node-load
-// snapshot. Live SSH — invoked only on the explicit refresh action, never on a GET render.
+// Probe every live-held node via the committed ihpc.node.usage probe (fail-closed) and persist a
+// node-load snapshot. Live SSH — invoked only on the explicit refresh action, never on a GET render.
+// Also reconciles stale held-node records (self-healing) using the same held-set already fetched.
 async function refreshNodeUsage(cfg) {
-  const targets = relevantIhpcNodes(cfg);
+  // Build live target list (cnode mynodes per profile, deduped) and collect profile-level errors
+  const { targets, profileErrors } = await liveHeldNodeTargets(cfg);
+
+  // Collect non-terminal iHPC run records for reconcileStaleHeldNodes
+  let records = [];
+  let files;
+  try { files = fs.readdirSync(cfg.auditDir); } catch { files = []; }
+  for (const file of files) {
+    if (!file.endsWith(".json")) continue;
+    try {
+      const record = JSON.parse(fs.readFileSync(path.join(cfg.auditDir, file), "utf8"));
+      if (record?.platform === "uts-ihpc") records.push(record);
+    } catch { /* skip unreadable */ }
+  }
+
+  // Reconcile stale held-nodes — reuses cfg.fetchHeldNodes (which was already memoized per-profile
+  // inside liveHeldNodeTargets for the targets list; reconcileStaleHeldNodes will call it again but
+  // that is a separate concern: reconcile needs the same result for correctness, and each call is
+  // a cheap cnode probe from the MCP layer). We pass the injected fn so tests can spy on it.
+  await cfg.reconcileStaleHeldNodes(records, {
+    fetchHeldNodes: cfg.fetchHeldNodes,
+    auditDir: cfg.auditDir,
+    configPath: cfg.configPath,
+    now: new Date()
+  });
+
+  // Probe GPU usage for each live-held node
   const nodes = [];
-  for (const { profileId, node } of targets) {
+  for (const { profile_id: profileId, node, held_no_run } of targets) {
     const { usage } = await runIhpcNodeUsage(
       { profileId, node },
       { configPath: cfg.configPath, executor: cfg.nodeUsageExecutor }
     );
-    nodes.push({ profile_id: profileId, node: usage.node, status: usage.status, gpus: usage.gpus, processes: usage.processes ?? [], reason: usage.reason ?? null });
+    nodes.push({
+      profile_id: profileId,
+      node: usage.node,
+      status: usage.status,
+      gpus: usage.gpus,
+      processes: usage.processes ?? [],
+      reason: usage.reason ?? null,
+      held_no_run
+    });
   }
-  const snapshot = { probed_at: new Date().toISOString(), node_count: nodes.length, nodes };
+
+  const snapshot = {
+    probed_at: new Date().toISOString(),
+    node_count: nodes.length,
+    nodes,
+    profile_errors: profileErrors
+  };
   fs.mkdirSync(cfg.nodeUsageDir, { recursive: true });
   fs.writeFileSync(path.join(cfg.nodeUsageDir, "latest.json"), `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
   return decorateNodeUsage(snapshot);
@@ -255,6 +328,7 @@ function readNodeUsageSnapshot(cfg) {
 // Freshness + a balance summary. Per-node utilization is the busiest GPU on the node; a node whose GPUs
 // are all near-idle is flagged (the "holding a GPU but wasting it" signal). node-unverifiable nodes are
 // reported separately, never counted as 0% (an honest "we could not read it", not "idle").
+// profile_errors (probe failures per profile) from the snapshot are passed through to the response.
 function decorateNodeUsage(snapshot) {
   const nodes = snapshot.nodes || [];
   const probedAt = snapshot.probed_at ?? null;
@@ -271,7 +345,15 @@ function decorateNodeUsage(snapshot) {
     util_spread: utils.length ? Math.max(...utils) - Math.min(...utils) : null,
     idle_nodes: verifiable.filter((n) => n.gpus.every((g) => g.utilization_gpu_percent <= 5)).map((n) => n.node)
   };
-  return { available: true, probed_at: probedAt, age_minutes: ageMinutes, node_count: nodes.length, nodes, balance };
+  return {
+    available: true,
+    probed_at: probedAt,
+    age_minutes: ageMinutes,
+    node_count: nodes.length,
+    nodes,
+    balance,
+    profile_errors: snapshot.profile_errors ?? []
+  };
 }
 
 function historyInput(q, cfg) {

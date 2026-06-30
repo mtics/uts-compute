@@ -31,9 +31,10 @@ const STATUS = {
   finished: { color: "green", dot: "" },
   failed: { color: "red", dot: "" },
   cancelled: { color: "orange", dot: "" },
+  stale: { color: "orange", dot: "" },
   unknown: { color: "secondary", dot: "" }
 };
-const TERMINAL = new Set(["finished", "failed", "cancelled"]);
+const TERMINAL = new Set(["finished", "failed", "cancelled", "stale"]);
 const STATUS_TOKEN = {
   planned: "--ops-status-planned",
   submitting: "--ops-status-submitting",
@@ -42,6 +43,7 @@ const STATUS_TOKEN = {
   finished: "--ops-status-finished",
   failed: "--ops-status-failed",
   cancelled: "--ops-status-cancelled",
+  stale: "--ops-status-cancelled",
   unknown: "--ops-status-unknown"
 };
 const STATUS_COLOR_FALLBACK = {
@@ -66,6 +68,7 @@ const STATUS_ICON = {
   finished: "ti-circle-check",
   failed: "ti-alert-triangle",
   cancelled: "ti-ban",
+  stale: "ti-link-off",
   unknown: "ti-help-circle"
 };
 const countBy = (arr, key) => arr.reduce((m, x) => ((m[x[key]] = (m[x[key]] || 0) + 1), m), {});
@@ -120,9 +123,10 @@ const STATUS_SORT_ORDER = {
   submitted: 4,
   planned: 5,
   cancelled: 6,
-  finished: 7
+  stale: 7,
+  finished: 8
 };
-const PROJECT_STATUS_ORDER = ["failed", "unknown", "running", "submitting", "submitted", "planned", "cancelled", "finished"];
+const PROJECT_STATUS_ORDER = ["failed", "unknown", "running", "submitting", "submitted", "planned", "cancelled", "stale", "finished"];
 const PROJECT_STATUS_LABELS = {
   failed: "failed",
   unknown: "unknown",
@@ -2302,7 +2306,7 @@ function runsChartsUseful(summary, runs) {
   const statusBuckets = Object.values(statusCounts).filter((count) => Number(count) > 0).length;
   const projectBuckets = (summary.by_project || []).filter((project) => project.project && project.project !== "unassigned" && Number(project.core_hours || project.runs || 0) > 0).length;
   const hasUsage = runs.some((run) => run.usage) || Number(summary.total_core_hours || 0) > 0 || Number(summary.total_gpu_hours || 0) > 0;
-  const hasTerminal = runs.some((run) => ["finished", "failed", "cancelled"].includes(run.status));
+  const hasTerminal = runs.some((run) => ["finished", "failed", "cancelled", "stale"].includes(run.status));
   return hasUsage || hasTerminal || statusBuckets > 2 || projectBuckets > 1;
 }
 function runsHeaderSummary(data, runs) {
@@ -3582,7 +3586,7 @@ function lifecycleEventTone(event) {
   return { severity: "neutral", label: "event", icon: "ti-point" };
 }
 function lifecycleTerminalStep(status) {
-  if (status === "failed" || status === "cancelled" || status === "unknown") return status;
+  if (status === "failed" || status === "cancelled" || status === "stale" || status === "unknown") return status;
   return "finished";
 }
 function lifecycleTab(run) {
@@ -3617,7 +3621,7 @@ function lifecycleTab(run) {
     <ul class="timeline">${timeline || `<li>${emptyState("No events", "", "history-empty")}</li>`}</ul>`;
 }
 function stageIndex(status) {
-  if (status === "finished" || status === "failed" || status === "cancelled") return 3;
+  if (status === "finished" || status === "failed" || status === "cancelled" || status === "stale") return 3;
   if (status === "running") return 2;
   if (status === "submitted" || status === "submitting") return 1;
   return 0;
@@ -5225,8 +5229,11 @@ function nodeCard(n, idleSet) {
   const body = n.status === "ok" && n.gpus?.length
     ? n.gpus.map(gpuBar).join("")
     : `<div class="node-unverifiable-note"><i class="ti ti-alert-triangle me-1"></i>unreadable — ${esc(n.reason || "node could not be probed")}</div>`;
+  const heldNoRunChip = n.held_no_run
+    ? `<span class="runs-header-chip ms-1" title="This node is held by your account but no plugin run record references it — work started outside the plugin."><i class="ti ti-plug-x me-1"></i>held · no plugin run</span>`
+    : "";
   return `<div class="node-card ${cls}">
-    <div class="node-card-head"><strong>${esc(n.node)}</strong><span class="profile">${esc(n.profile_id)}</span></div>
+    <div class="node-card-head"><strong>${esc(n.node)}</strong><span class="profile">${esc(n.profile_id)}</span>${heldNoRunChip}</div>
     ${idle ? `<div class="node-unverifiable-note"><i class="ti ti-bolt-off me-1"></i>held but idle (all GPUs ≤5%)</div>` : ""}
     ${body}
   </div>`;
@@ -5252,10 +5259,15 @@ function nodeLoadBody(data) {
     ${b.unverifiable_count ? `<span class="text-secondary"><i class="ti ti-alert-triangle me-1"></i>${esc(b.unverifiable_count)} unreadable</span>` : ""}
     ${fresh ? `<span class="text-secondary">${esc(fresh)}</span>` : ""}
   </div>`;
+  const profileErrors = (data.profile_errors || []).length
+    ? `<div class="node-load-profile-errors">${(data.profile_errors).map((e) =>
+        `<div class="text-secondary small"><i class="ti ti-alert-circle me-1"></i><code>${esc(e.profile_id)}</code>: couldn't reach login host — ${esc(e.probe_error)}</div>`
+      ).join("")}</div>`
+    : "";
   const grid = (data.nodes || []).length
     ? `<div class="node-load-grid">${data.nodes.map((n) => nodeCard(n, idleSet)).join("")}</div>`
     : emptyState("No active iHPC nodes", "No active iHPC run is currently holding a node to probe.", "history-empty");
-  return `<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><div class="text-secondary small">Live GPU utilization for the nodes your active iHPC runs occupy — see whether load is balanced and whether a node is held but idle.</div>${refreshBtn}</div>${balance}${grid}`;
+  return `<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"><div class="text-secondary small">Live GPU utilization for the nodes your active iHPC runs occupy — see whether load is balanced and whether a node is held but idle.</div>${refreshBtn}</div>${balance}${profileErrors}${grid}`;
 }
 // Node load is rendered as a section of the Runs view (see renderRunsList), so the refresh button
 // re-renders whatever view embeds it. `reRender` is the embedding view's render function.

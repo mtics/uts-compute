@@ -1,7 +1,7 @@
 {
   "manifest_version": "0.3",
   "name": "uts-compute",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "MCP server for UTS HPC and UTS iHPC experiment workflows: job planning, autonomous conformance-gated submission, monitoring, fixed-file transfers, and artifact collection.",
   "author": {
     "name": "mtics"

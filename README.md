@@ -2,7 +2,7 @@
 
 > A safe, auditable bridge that lets an AI coding agent run real experiments on UTS research compute — without ever handing it a blank shell.
 
-![version](https://img.shields.io/badge/version-0.1.5-blue)
+![version](https://img.shields.io/badge/version-0.1.6-blue)
 ![surface](https://img.shields.io/badge/MCP-stdio_server-6E40C9)
 ![tools](https://img.shields.io/badge/tools-47-success)
 ![skills](https://img.shields.io/badge/skills-14-success)
@@ -341,7 +341,7 @@ npm run webui:demo   # seed sample runs, then serve
 npm run webui:stop   # release the fixed port
 ```
 
-It reads the **same already-redacted `.uts-computing` state** the MCP server writes (no secrets, no cluster access for reads) and renders a **Runs** operational dashboard (execution overview, a Projects glance, live iHPC **Node load**, and status / core-hours charts), per-run detail (Overview / Plan / Lifecycle / Logs / Artifacts), an **Explore** resource-fit view (with observed iHPC node-level GPU and aggregated PBS array-job usage), a first-class **Projects** index, and a **Capacity** snapshot. Live status reconcile and the node-load probe re-poll the cluster over SSH on demand. Write actions (clone / rerun / abort / approve) route through the *same* domain functions and gates as the MCP tools — including plan-hash re-verification and the confirmation token, which never leaves the server. See [webui/README.md](webui/README.md).
+It reads the **same already-redacted `.uts-computing` state** the MCP server writes (no secrets, no cluster access for reads) and renders a **Runs** operational dashboard (execution overview, a Projects glance, live iHPC **Node load**, and status / core-hours charts), per-run detail (Overview / Plan / Lifecycle / Logs / Artifacts), an **Explore** resource-fit view (with observed iHPC node-level GPU and aggregated PBS array-job usage), a first-class **Projects** index, and a **Capacity** snapshot. Live status reconcile and the node-load probe re-poll the cluster over SSH on demand. The **Node load** panel derives its node set from each iHPC account's **live held nodes** (`cnode mynodes` on the login host) rather than frozen run-record fields — new nodes appear automatically, departed nodes vanish, and a non-terminal iHPC run whose node is no longer held is auto-retired to **`stale`** on reconcile (only when the held-node probe succeeds). Write actions (clone / rerun / abort / approve) route through the *same* domain functions and gates as the MCP tools — including plan-hash re-verification and the confirmation token, which never leaves the server. See [webui/README.md](webui/README.md).
 
 ---
 
@@ -368,7 +368,7 @@ One source of truth (`mcp-server/` + Skills) ships to four surfaces ([docs/distr
 | Claude Desktop | install a `.mcpb` bundle | `manifest.json` (+ `.mcpbignore`) |
 | MCP registry | `server.json` under `io.github.mtics/…` | `server.json` |
 
-All four declare version **0.1.5** in lockstep (the server reports it dynamically from `package.json`, so there is no hand-maintained literal to drift).
+All four declare version **0.1.6** in lockstep (the server reports it dynamically from `package.json`, so there is no hand-maintained literal to drift).
 
 ---
 

@@ -8,8 +8,8 @@ import { getProfile } from "../../core/config.js";
 import { assertInsideRuntime, RUNTIME_DIRS } from "../../core/paths.js";
 import { writeEvidenceJson } from "../../lib/evidence.js";
 import { assertQuotaSnapshot } from "../../core/validation.js";
-import { parsePbsQueueLimits, parseDfAvailable, IHPC_NODE_FAMILIES, inferNodeFamily } from "./quota-limits.js";
-import { isSafeRemoteJobId } from "../../core/ids.js";
+import { parsePbsQueueLimits, parseDfAvailable, IHPC_NODE_FAMILIES } from "./quota-limits.js";
+import { parseIhpcActiveNodes } from "./held-nodes.js";
 import { PLATFORM } from "../../core/types.js";
 import type { ComputeProfile, QuotaEvidenceCommand, QuotaRefreshResult, QuotaSnapshot } from "../../core/types.js";
 
@@ -565,19 +565,6 @@ function parseIhpcActiveSessionCount(stdout: string): number {
   // welcome banner and the column header are never miscounted as sessions. A user holding zero nodes
   // must report 0 — this number gates iHPC supervised start in selectActiveComputeNode.
   return parseIhpcActiveNodes(stdout).length;
-}
-
-function parseIhpcActiveNodes(stdout: string): Array<{ node: string; family?: string }> {
-  return stdout
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !/^no\b/i.test(line) && !/^node\b/i.test(line))
-    .map((line) => line.split(/\s+/)[0])
-    .filter((node) => isSafeRemoteJobId(node))
-    .map((node) => ({
-      node,
-      ...(inferNodeFamily(node) ? { family: inferNodeFamily(node) } : {})
-    }));
 }
 
 function countNonEmptyLines(stdout: string): number {

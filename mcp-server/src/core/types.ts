@@ -312,7 +312,9 @@ export interface RunRecord {
   // "submitting" is a transient durable marker written just before the remote qsub/start and cleared
   // to "submitted"/"running" on success; a record stuck in "submitting" is an in-flight submission to
   // reconcile (jobs.track surfaces it), never a silently-orphaned remote job.
-  status: "planned" | "submitting" | "submitted" | "running" | "finished" | "failed" | "cancelled" | "unknown";
+  status: "planned" | "submitting" | "submitted" | "running" | "finished" | "failed" | "cancelled" | "unknown" | "stale";
+  // Optional free-text reason written when the reconciler marks a run stale (node no longer held).
+  stale_reason?: string;
   retry_of?: RetryLineage;
   sweep_retry_of?: SweepRetryLineage;
   created_at: string;

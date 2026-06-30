@@ -36,7 +36,7 @@ export const FIELD_STATE = Object.freeze({
 // jobsHistory defaults an unscoped run's project to this marker; treat it as "no project".
 const UNASSIGNED_PROJECT = "unassigned";
 
-const TERMINAL_STATUS = new Set(["finished", "failed", "cancelled", "canceled"]);
+const TERMINAL_STATUS = new Set(["finished", "failed", "cancelled", "canceled", "stale"]);
 const ACTIVE_STATUS = new Set(["submitting", "submitted", "running"]);
 
 export function isTerminal(status) {

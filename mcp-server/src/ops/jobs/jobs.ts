@@ -14,6 +14,10 @@ import {
   updateRunRecord
 } from "../../core/audit.js";
 import { reconcileIhpcCampaign } from "../scheduler/seam/reconcile.js";
+// T3 (iHPC live node truth): the read-only held-node seam. trackActiveJobs runs ONE `cnode mynodes` per
+// iHPC profile and retires any non-terminal iHPC run on a node the account no longer holds to `stale`.
+// Injected through JobOperationOptions.fetchHeldNodes (default: the real seam) so tests stub the whole call.
+import { fetchHeldNodes as defaultFetchHeldNodes, type HeldNodesResult } from "../quotas/held-nodes.js";
 // P2-a: the observe path reuses the EXISTING ihpc.node.usage probe for the GPU snapshot (same two-hop
 // seam, same fixed NODE_USAGE_PY, same fail-closed node-unverifiable contract) — no new SSH assembler.
 import { probeNodeUsage } from "./ihpc-node-usage.js";
@@ -68,6 +72,14 @@ import { isPbsArrayJobId, metricsToRunUsage, parseExecNodes, parseQstatFields, p
 // node id to its NodeUsageView (fail-closed: a node it cannot read => node-unverifiable, empty gpus[]).
 export type NodeUsageProbe = (profile: ComputeProfile, node: string) => Promise<NodeUsageView>;
 
+// T3: the injectable shape of the held-node probe. Matches ops/quotas/held-nodes.fetchHeldNodes — one
+// `cnode mynodes` per profile. Injected so tests stub the whole call (its own seam takes a CommandExecutor
+// of a DIFFERENT type than the sweep's JobCommandExecutor, so the sweep never threads its executor in).
+export type FetchHeldNodes = (
+  profileId: string,
+  opts?: { configPath?: string; timeoutMs?: number; now?: Date }
+) => Promise<HeldNodesResult>;
+
 export interface JobOperationOptions {
   timeoutMs?: number;
   executor?: JobCommandExecutor;
@@ -85,6 +97,10 @@ export interface JobOperationOptions {
   //                 sweep's cost/behavior is unchanged from before P1-a). The GPU snapshot, if any, is
   //                 then attached at the track level by the de-duped per-node pass.
   nodeUsageProbe?: NodeUsageProbe | false;
+  // T3 (iHPC live node truth): the held-node probe used by reconcileStaleHeldNodes (the jobs.track
+  // pre-pass that retires runs on no-longer-held nodes to `stale`). Defaults to the real held-nodes seam;
+  // tests inject a stub. NOT the sweep's JobCommandExecutor — fetchHeldNodes owns its own executor.
+  fetchHeldNodes?: FetchHeldNodes;
 }
 
 export type JobCommandExecutor = (
@@ -268,6 +284,113 @@ function toRunUsage(metrics: UsageMetrics): RunUsage {
   return metricsToRunUsage(metrics);
 }
 
+// T3 terminal set (mirrors the one in trackActiveJobs / updateRunStatus). `stale` is terminal.
+const TERMINAL_RUN_STATUSES = new Set<RunRecord["status"]>(["finished", "failed", "cancelled", "stale"]);
+
+export interface ReconcileStaleHeldNodesDeps {
+  // The held-node probe (one `cnode mynodes` per profile). Tests stub this whole function.
+  fetchHeldNodes: FetchHeldNodes;
+  auditDir?: string;
+  evidenceDir?: string;
+  configPath?: string;
+  now: Date;
+}
+
+export interface ReconcileStaleHeldNodesResult {
+  // run_ids retired to `stale` this pass (their in-memory record.status was mutated AND persisted).
+  staled: string[];
+}
+
+// iHPC live node truth (spec T3): for each profile that owns >=1 NON-terminal iHPC run, run ONE
+// `cnode mynodes` (fetchHeldNodes) and, when it SUCCEEDS, retire any of that profile's iHPC runs sitting on
+// a node the account NO LONGER HOLDS to the terminal `stale` status — mutating the in-memory record AND
+// persisting via the single-write evidence seam (recordOperationEvidence: appends the event + bumps rev).
+//
+// Audit-P0 / first principles: this is a DEFINITE decision (the login host AUTHORITATIVELY reported the
+// held set), NOT an indeterminate `unknown` observation — so it does NOT route through updateRunStatus and
+// must never weaken that guard. The truth table is exact:
+//   ok:true,  node NOT in heldNodes -> stale (+ stale_reason naming the node, + reconcile event, PERSIST)
+//   ok:true,  node IN heldNodes     -> leave unchanged (normal per-run reconcile continues)
+//   ok:false (probe failed)         -> mark NOTHING (preserve current status); fail-closed
+//   node missing on the record      -> leave unchanged (cannot judge)
+// Exported because the WebUI panel-refresh path (T4) calls it too.
+export async function reconcileStaleHeldNodes(
+  records: RunRecord[],
+  deps: ReconcileStaleHeldNodesDeps
+): Promise<ReconcileStaleHeldNodesResult> {
+  // Only NON-terminal iHPC runs are candidates. Group them by profile so we probe once per profile.
+  const byProfile = new Map<string, RunRecord[]>();
+  for (const record of records) {
+    if (record.platform !== PLATFORM.IHPC || TERMINAL_RUN_STATUSES.has(record.status)) {
+      continue;
+    }
+    const bucket = byProfile.get(record.profile_id);
+    if (bucket) {
+      bucket.push(record);
+    } else {
+      byProfile.set(record.profile_id, [record]);
+    }
+  }
+
+  const staled: string[] = [];
+  for (const [profileId, profileRecords] of byProfile) {
+    let held: HeldNodesResult;
+    try {
+      held = await deps.fetchHeldNodes(profileId, { configPath: deps.configPath, now: deps.now });
+    } catch {
+      // A thrown probe is treated exactly like ok:false — fail-closed, mark nothing for this profile.
+      continue;
+    }
+    // ok:false (VPN/SSH/timeout) is INDETERMINATE — the held set is not authoritative, so mark NOTHING.
+    if (!held.ok) {
+      continue;
+    }
+    for (const record of profileRecords) {
+      const node = record.observed?.node ?? record.submission?.node;
+      if (!node) {
+        // Cannot judge a run with no node — leave unchanged.
+        continue;
+      }
+      if (held.heldNodes.has(node)) {
+        // Still held — normal per-run reconcile continues for this run.
+        continue;
+      }
+      // Authoritatively no longer held: retire to `stale` (definite decision). Mutate in memory so the
+      // jobs.track partition loop then skips it via the terminal check, AND persist through the single
+      // evidence-write seam (event-append + rev-bump). NOT routed through updateRunStatus (audit-P0).
+      const evidencePath = writeJobEvidence(
+        "stale-held-node",
+        record.run_id,
+        deps.now,
+        {
+          profile_id: profileId,
+          node,
+          held_nodes: Array.from(held.heldNodes).sort(),
+          held_observed_at: held.observedAt,
+          command: "ssh <profile-host> cnode mynodes",
+          decision: "stale"
+        },
+        deps.evidenceDir
+      );
+      record.status = "stale";
+      record.stale_reason = `iHPC node ${node} is no longer held by ${profileId}; run retired to stale`;
+      recordOperationEvidence(
+        record,
+        {
+          kind: "stale-held-node-reconcile",
+          summary: `Retired to 'stale': node ${node} no longer held (cnode mynodes)`,
+          redacted_command: "ssh <profile-host> cnode mynodes"
+        },
+        evidencePath,
+        deps.now,
+        deps.auditDir
+      );
+      staled.push(record.run_id);
+    }
+  }
+  return { staled };
+}
+
 export interface JobsTrackInput {
   profileId?: string;
   platform?: Platform;
@@ -312,7 +435,20 @@ export async function trackActiveJobs(
     );
   }
 
-  const terminal = new Set<RunRecord["status"]>(["finished", "failed", "cancelled"]);
+  // T3 (iHPC live node truth): EARLY pre-pass — before partitioning into active/terminal, retire any
+  // non-terminal iHPC run sitting on a node its account NO LONGER HOLDS to the terminal `stale` status
+  // (one `cnode mynodes` per profile; probe-success-guarded — a failed probe marks nothing). This mutates
+  // record.status IN PLACE so the partition loop below then skips the now-`stale` ones via the terminal
+  // check, AND persists them — a freshly-staled run is excluded from active/selected this same sweep.
+  await reconcileStaleHeldNodes(records, {
+    fetchHeldNodes: options.fetchHeldNodes ?? defaultFetchHeldNodes,
+    auditDir: options.auditDir,
+    evidenceDir: options.evidenceDir,
+    configPath: options.configPath,
+    now
+  });
+
+  const terminal = new Set<RunRecord["status"]>(["finished", "failed", "cancelled", "stale"]);
   let skippedTerminal = 0;
   let skippedPlanned = 0;
   const active: RunRecord[] = [];
@@ -867,7 +1003,7 @@ export async function cancelJob(
   if (runRecord.platform !== PLATFORM.HPC) {
     throw new Error("jobs.cancel currently supports UTS HPC PBS run records only");
   }
-  if (["finished", "failed", "cancelled"].includes(runRecord.status)) {
+  if (["finished", "failed", "cancelled", "stale"].includes(runRecord.status)) {
     throw new Error(`Run ${runRecord.run_id} is ${runRecord.status}; terminal runs cannot be cancelled`);
   }
   if (profile.platform !== runRecord.platform) {
@@ -1049,7 +1185,8 @@ const DEFINITE_LEDGER_STATUSES = new Set<RunRecord["status"]>([
   "running",
   "finished",
   "failed",
-  "cancelled"
+  "cancelled",
+  "stale"
 ]);
 
 // Status-reconcile transition: apply the terminal-state clamp policy (kept here, NOT folded — only a
@@ -1088,7 +1225,7 @@ function updateRunStatus(
       auditDir
     );
   }
-  const terminal = new Set(["finished", "failed", "cancelled"]);
+  const terminal = new Set(["finished", "failed", "cancelled", "stale"]);
   if (!terminal.has(runRecord.status) || observedStatus === "finished") {
     runRecord.status = observedStatus;
   }
@@ -1426,7 +1563,7 @@ async function cancelIhpcJob(
   if (profile.platform !== PLATFORM.IHPC) {
     throw new Error(`Profile ${profile.profile_id} is for ${profile.platform}, but run record is uts-ihpc`);
   }
-  if (["finished", "failed", "cancelled"].includes(runRecord.status)) {
+  if (["finished", "failed", "cancelled", "stale"].includes(runRecord.status)) {
     throw new Error(`Run ${runRecord.run_id} is ${runRecord.status}; terminal runs cannot be cancelled`);
   }
   if (!runRecord.plan_hash || !runRecord.quota_snapshot_id) {
