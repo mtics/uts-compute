@@ -310,7 +310,13 @@ function templateVariables(jobSpec: JobSpec, templateId: TemplateId): Record<str
     memory_gb: resources.memory_gb ?? 1,
     walltime: resources.walltime ?? "01:00:00",
     queue: resources.queue ?? "",
-    ngpus: resources.ngpus ?? 0
+    ngpus: resources.ngpus ?? 0,
+    // CETUS GPU/MPI jobs load their runtime via `module load`. The flat {{var}} renderer can't loop,
+    // so fold the (schema-validated, injection-safe) modules into one block rendered before the
+    // command; empty when no modules so `{{module_loads}}{{command}}` leaves no stray blank line.
+    module_loads:
+      (jobSpec.modules ?? []).map((module) => `module load ${module}`).join("\n") +
+      ((jobSpec.modules?.length ?? 0) > 0 ? "\n" : "")
   };
 
   if ((templateId === "pbs-array" || templateId === "pbs-array-gpu") && resources.array) {
