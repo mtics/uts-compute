@@ -1157,15 +1157,18 @@ export function parseQstatStatus(
   if (!state) {
     return { status: "unknown", summary: "qstat output did not include job_state" };
   }
-  if (["Q", "H", "W", "T"].includes(state)) {
+  // M = job moved / transiting between queues (in-flight, pre-run) — group with Q/H/W/T.
+  if (["Q", "H", "W", "T", "M"].includes(state)) {
     return { status: "submitted", schedulerState: state, summary: `PBS job is queued or held (${state})` };
   }
   // B = a PBS Pro ARRAY job that has begun (one or more subjobs are running); it is an active/running
   // state, NOT an unmapped one — without this, a healthy running array job regresses to 'unknown'.
-  if (["R", "E", "S", "B"].includes(state)) {
+  // U = job suspended by workstation user activity (cycle-harvesting), like S — non-terminal, slot held.
+  if (["R", "E", "S", "B", "U"].includes(state)) {
     return { status: "running", schedulerState: state, summary: `PBS job is active (${state})` };
   }
-  if (["C", "F"].includes(state)) {
+  // X = a finished/expired job (historical exit, e.g. surfaced by `qstat -x`), like F.
+  if (["C", "F", "X"].includes(state)) {
     const exitStatusText = fields.get("Exit_status")?.trim();
     const exitStatus = exitStatusText === undefined ? null : Number(exitStatusText);
     if (exitStatus !== null && Number.isFinite(exitStatus) && exitStatus !== 0) {

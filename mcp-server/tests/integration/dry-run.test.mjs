@@ -142,6 +142,21 @@ test("jobs.plan routes a GPU array (sweep) to pbs-array-gpu with the select chun
   assert.doesNotMatch(plan.script, /#PBS -l mem=/);
 });
 
+test("jobs.plan renders module load lines before the command when modules are requested", () => {
+  // CETUS GPU/MPI jobs conventionally `module load` their runtime (cuda-latest / openmpi-latest);
+  // our scripts ran the raw command, so a GPU command assuming CUDA would fail in the bare PBS env.
+  const job = readExample("hpc-gpu.json");
+  job.run_id = "dry-run-hpc-gpu-modules";
+  job.modules = ["cuda-latest", "openmpi-latest"];
+  const plan = planJob(job, { auditDir: tempAuditDir(), writeAudit: false });
+  assert.match(plan.script, /module load cuda-latest\nmodule load openmpi-latest\npython train_gpu\.py/);
+});
+
+test("jobs.plan renders no module-load line when no modules are requested", () => {
+  const plan = planJob(readExample("hpc-cpu.json"), { auditDir: tempAuditDir(), writeAudit: false });
+  assert.doesNotMatch(plan.script, /module load/);
+});
+
 test("jobs.plan renders PBS array metadata deterministically", () => {
   const plan = planJob(readExample("hpc-array.json"), { auditDir: tempAuditDir(), writeAudit: false });
 

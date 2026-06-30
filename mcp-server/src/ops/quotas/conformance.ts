@@ -146,6 +146,20 @@ export function checkPbsConformance(input: ConformanceInput): ConformanceResult 
     return { conforms: false, queue, violations };
   }
 
+  // PBS routing queues (queue_type "Route") forward jobs to execution queues, so the routing queue's
+  // own (usually empty) resource_max / per-user limits are NOT the ones that will apply — we cannot
+  // prove conformance for an autonomous submit. Refuse with a clear pointer rather than silently
+  // passing on the routing queue's empty limits.
+  if (/^route/i.test(queueLimit.queue_type ?? "")) {
+    violations.push({
+      code: "routing-queue",
+      limit: "queue",
+      requested: queue,
+      message: `Queue ${queue} is a PBS routing queue; submit to the execution queue it routes to so live limits can be verified`
+    });
+    return { conforms: false, queue, violations };
+  }
+
   if (!queueLimit.enabled || !queueLimit.started) {
     violations.push({
       code: "queue-disabled",

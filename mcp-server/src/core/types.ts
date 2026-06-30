@@ -124,6 +124,10 @@ export interface JobSpec {
   workdir?: string;
   inputs?: string[];
   outputs?: string[];
+  // Optional `module load <name>` lines rendered into the PBS script before the command — CETUS
+  // GPU/MPI jobs conventionally load their runtime (cuda-latest / openmpi-latest). Names are strictly
+  // validated by the job-spec schema (no shell metacharacters), so they are injection-safe in-script.
+  modules?: string[];
   // Declared checkpoint resume contract (F6): a fixed checkpoint path and a single allowlisted flag
   // token. On a timeout retry, jobs.retry.plan appends "<resume_flag> <checkpoint_path>" to the
   // command. Both are declared + validated — never a glob or remote-dir scan.

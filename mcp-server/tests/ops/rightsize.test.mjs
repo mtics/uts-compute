@@ -75,3 +75,23 @@ test("rightsizeProject reports insufficient GPU data for CPU-only runs", () => {
   const report = rightsizeProject("alpha", records);
   assert.equal(report.gpus.recommendation, "insufficient data");
 });
+
+test("rightsizeProject reports used/requested efficiency % for mem, walltime, and gpus", () => {
+  // Parity with cpu_efficiency_percent: how much of the REQUEST was typically used (used_median /
+  // requested_typical). Here every run used 16/64 GB, 1h/4h, 1/4 GPU -> 25% each.
+  const records = [
+    rec(
+      { memory_gb: 64, walltime: "04:00:00", ncpus: 8, ngpus: 4 },
+      { walltime_seconds: 3600, mem_gb: 16, ncpus: 8, ngpus: 1, core_hours: 8, gpu_hours: 1, cpu_efficiency_percent: 80 }
+    ),
+    rec(
+      { memory_gb: 64, walltime: "04:00:00", ncpus: 8, ngpus: 4 },
+      { walltime_seconds: 3600, mem_gb: 16, ncpus: 8, ngpus: 1, core_hours: 8, gpu_hours: 1, cpu_efficiency_percent: 80 }
+    )
+  ];
+  const report = rightsizeProject("alpha", records);
+  assert.equal(report.mem_gb.efficiency_percent, 25);
+  assert.equal(report.walltime_hours.efficiency_percent, 25);
+  assert.equal(report.gpus.efficiency_percent, 25);
+  assert.equal(rightsizeProject("empty", []).mem_gb.efficiency_percent, null);
+});
