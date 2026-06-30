@@ -13,6 +13,7 @@ export interface ResourceAdvice {
   used_peak: number | null;
   used_median: number | null;
   headroom_ratio: number | null;
+  efficiency_percent: number | null;
   recommendation: string;
 }
 
@@ -81,7 +82,20 @@ function advise(requested: number[], used: number[], unit: string): ResourceAdvi
       recommendation = `about right (peak ${usedPeak}${unit} vs requested ${requestedTypical}${unit})`;
     }
   }
-  return { requested_typical: requestedTypical, used_peak: usedPeak, used_median: usedMedian, headroom_ratio: ratio, recommendation };
+  // Used/requested as a percentage (parity with cpu_efficiency_percent): how much of the typical
+  // request was typically consumed. A low value = chronic over-request; ~100 = right-sized.
+  const efficiencyPercent =
+    requestedTypical !== null && usedMedian !== null && requestedTypical > 0
+      ? round2((usedMedian / requestedTypical) * 100)
+      : null;
+  return {
+    requested_typical: requestedTypical,
+    used_peak: usedPeak,
+    used_median: usedMedian,
+    headroom_ratio: ratio,
+    efficiency_percent: efficiencyPercent,
+    recommendation
+  };
 }
 
 function median(values: number[]): number | null {
